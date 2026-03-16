@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, Outlet } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Home, Map, User, Star, Type, Contrast, Maximize } from 'lucide-react';
 import { useAccessibilityStore } from '../contexts/useAccessibilityStore';
+import { useUserStore } from '../contexts/useUserStore';
+import { useLocationStore } from '../contexts/useLocationStore';
 import { useHaptics } from '../hooks/useHaptics';
+import { VoiceNavigatorOrb } from '../components/navigation/VoiceNavigatorOrb';
 
 const NAV_ITEMS = [
   { to: '/',        label: 'Home',    Icon: Home,  announce: 'Home page. Find accessible healthcare near you.' },
@@ -23,6 +26,9 @@ export function MainAppLayout({ children }) {
     largeTapTargets, toggleLargeTargets
   } = useAccessibilityStore();
   
+  const { profile, addEmergencySOS } = useUserStore();
+  const { coords, hasRealLocation } = useLocationStore();
+  
   const { tap } = useHaptics();
   const location = useLocation();
 
@@ -36,11 +42,12 @@ export function MainAppLayout({ children }) {
   useEffect(() => {
     if (!readingRuler) return;
     const handleMove = (e) => setRulerY(e.clientY);
+    const handleTouch = (e) => setRulerY(e.touches[0].clientY);
     window.addEventListener('mousemove', handleMove);
-    window.addEventListener('touchmove', (e) => setRulerY(e.touches[0].clientY));
+    window.addEventListener('touchmove', handleTouch);
     return () => {
       window.removeEventListener('mousemove', handleMove);
-      window.removeEventListener('touchmove', handleMove); // cleanup touch
+      window.removeEventListener('touchmove', handleTouch);
     };
   }, [readingRuler]);
 
@@ -48,6 +55,14 @@ export function MainAppLayout({ children }) {
     tap();
     if ('vibrate' in navigator) navigator.vibrate([120, 60, 120, 60, 300]);
     speak('Emergency SOS activated. Contacting emergency services.', { force: true });
+    
+    // Log the SOS event
+    addEmergencySOS({
+      location: hasRealLocation ? coords : 'Simulated Location',
+      needs: profile.needs,
+      status: 'dispatched'
+    });
+
     setSosActive(true);
     setTimeout(() => setSosActive(false), 4000);
   };
@@ -70,7 +85,7 @@ export function MainAppLayout({ children }) {
 
       {/* Main Content */}
       <main id="main-content" tabIndex={-1} style={{ flex: 1, overflowY: 'auto', paddingBottom: 80 }}>
-        {children}
+        <Outlet />
       </main>
 
       {/* ─── QUICK ACCESS A11Y FLOATING TOOLBAR ─── */}
@@ -103,6 +118,8 @@ export function MainAppLayout({ children }) {
           <Maximize size={20} />
         </button>
       </div>
+
+      <VoiceNavigatorOrb />
 
       {/* Floating SOS */}
       <motion.button

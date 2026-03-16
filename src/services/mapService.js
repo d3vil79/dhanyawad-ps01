@@ -1,15 +1,26 @@
 import L from 'leaflet';
 import { scoreColor } from '../utils/scoreCalculator';
 
-// Fix default icon paths broken by Vite
-delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
-  iconUrl:       'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
-  shadowUrl:     'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
-});
+// Lazily patch default icon paths broken by Vite
+// This runs only when the map actually renders in the browser (not during SSR/optimizer)
+let iconPatched = false;
+function ensureIconPatched() {
+  if (iconPatched) return;
+  iconPatched = true;
+  try {
+    delete L.Icon.Default.prototype._getIconUrl;
+    L.Icon.Default.mergeOptions({
+      iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
+      iconUrl:       'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
+      shadowUrl:     'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+    });
+  } catch (e) {
+    // silently ignore if Leaflet not ready in this context
+  }
+}
 
 export function createCustomIcon(score) {
+  ensureIconPatched();
   const color = scoreColor(score);
   const html = `
     <div style="

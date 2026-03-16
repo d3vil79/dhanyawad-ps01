@@ -53,7 +53,7 @@ export const FACILITIES = [
     },
     alert: null,
     reviews: [
-      { id: 'r1', author: 'Priya M.', rating: 9, date: '2026-03-10', text: 'The tactile paths truly helped our guide dog navigate. Exemplary staff.', tags: ['Tactile paths', 'Kind staff'] },
+      { id: 'r1', author: 'Priya M.', rating: 9, date: '2026-03-10', text: 'The tactile paths truly helped our guide dog navigate. Exemplary staff.', tags: ['Tactile paths', 'Kind staff'], proofImage: 'https://images.unsplash.com/photo-1510074377623-8cf13fb86c08?w=300&q=80' },
       { id: 'r2', author: 'Robert K.', rating: 10, date: '2026-03-08', text: 'Best accessible hospital I have visited. ASL interpreters were ready immediately.', tags: ['ASL available', 'No wait'] },
     ],
     hours: 'Open 24 hours',

@@ -1,7 +1,8 @@
 import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Mic, Square, CheckCircle, Trash2 } from 'lucide-react';
+import { ArrowLeft, Mic, Square, CheckCircle, Trash2, Camera, UploadCloud } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useUserStore } from '../../contexts/useUserStore';
 import { useHaptics } from '../../hooks/useHaptics';
 import { useVoiceCommand } from '../../hooks/useVoiceCommand';
 import { useAccessibilityStore } from '../../contexts/useAccessibilityStore';
@@ -23,8 +24,10 @@ export default function SubmitReview() {
   const [score, setScore] = useState(7);
   const [selectedTags, setSelectedTags] = useState([]);
   const [textReview, setTextReview] = useState('');
+  const [proofFile, setProofFile] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const { addPoints } = useUserStore();
 
   // Voice review recording — appends final transcript to textarea
   const { listening, transcript, error: voiceError, startListening, stopListening } = useVoiceCommand({
@@ -59,6 +62,15 @@ export default function SubmitReview() {
     speak('Review text cleared.');
   };
 
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setProofFile(file.name);
+      speak(`File ${file.name} attached as proof.`);
+      tap();
+    }
+  };
+
   const handleSubmit = async () => {
     if (!textReview.trim() && selectedTags.length === 0) {
       speak('Please write a review or select at least one tag before submitting.');
@@ -67,9 +79,14 @@ export default function SubmitReview() {
     tap();
     setSubmitting(true);
     speak('Submitting your review. Please wait.');
-    await submitReview(selectedFacility, { score, tags: selectedTags, text: textReview });
+    await submitReview(selectedFacility, { score, tags: selectedTags, text: textReview, hasProof: !!proofFile });
+    
+    // Gamification Points
+    const pointsEarned = 10 + (proofFile ? 15 : 0) + (selectedTags.length * 2);
+    if (addPoints) addPoints(pointsEarned);
+
     success();
-    speak('Review submitted successfully. Thank you for helping the community.');
+    speak(`Review submitted successfully. You earned ${pointsEarned} community points!`);
     setSubmitting(false);
     setSubmitted(true);
   };
@@ -104,11 +121,11 @@ export default function SubmitReview() {
           </motion.div>
           <h2 style={{ fontSize: 'var(--fs-2xl)', fontWeight: 'var(--fw-extrabold)', marginBottom: 8 }}>Review Submitted!</h2>
           <p style={{ color: 'var(--clr-text-secondary)', marginBottom: 28, lineHeight: 'var(--lh-relaxed)' }}>
-            Thank you for helping the community find accessible healthcare. Your review makes a real difference. 🙏
+            Thank you for helping the community find accessible healthcare. You earned points for this audit! 🙏
           </p>
           <motion.button
             whileTap={{ scale: 0.96 }}
-            onClick={() => { setSubmitted(false); setScore(7); setSelectedTags([]); setTextReview(''); tap(); }}
+            onClick={() => { setSubmitted(false); setScore(7); setSelectedTags([]); setTextReview(''); setProofFile(null); tap(); }}
             style={{
               padding: '12px 28px', borderRadius: 'var(--r-lg)',
               background: 'var(--clr-primary)', color: '#fff',
@@ -235,6 +252,43 @@ export default function SubmitReview() {
               );
             })}
           </div>
+        </section>
+
+        {/* Photo/Video Proof Upload */}
+        <section>
+          <h2 style={{ fontWeight: 'var(--fw-semibold)', marginBottom: 12 }}>Upload Photographic Proof</h2>
+          <p style={{ fontSize: 'var(--fs-xs)', color: 'var(--clr-text-muted)', marginBottom: 12 }}>Earn +15 bonus points for submitting visual proof of accessibility features!</p>
+          
+          <label
+            style={{
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+              padding: 'var(--sp-6)', border: `2px dashed ${proofFile ? 'var(--clr-success)' : 'var(--clr-border)'}`,
+              borderRadius: 'var(--r-xl)', background: proofFile ? '#F0FDF4' : 'var(--clr-surface)',
+              cursor: 'pointer', transition: 'all var(--transition-base)',
+              gap: 8, color: proofFile ? 'var(--clr-success)' : 'var(--clr-text-secondary)',
+            }}
+          >
+            <input 
+              type="file" 
+              accept="image/*,video/*" 
+              onChange={handleFileUpload} 
+              style={{ display: 'none' }} 
+              aria-label="Upload photo or video proof"
+            />
+            {proofFile ? (
+              <>
+                <CheckCircle size={32} />
+                <span style={{ fontWeight: 'var(--fw-semibold)', fontSize: 'var(--fs-sm)' }}>{proofFile}</span>
+                <span style={{ fontSize: 'var(--fs-xs)', color: '#166534' }}>Tap to change file</span>
+              </>
+            ) : (
+              <>
+                <Camera size={32} color="var(--clr-text-muted)" />
+                <span style={{ fontWeight: 'var(--fw-semibold)', fontSize: 'var(--fs-sm)', color: 'var(--clr-text-primary)' }}>Tap to Upload Evidence</span>
+                <span style={{ fontSize: 'var(--fs-xs)' }}>Supports images & video (max 50MB)</span>
+              </>
+            )}
+          </label>
         </section>
 
         {/* Text + Voice Review */}

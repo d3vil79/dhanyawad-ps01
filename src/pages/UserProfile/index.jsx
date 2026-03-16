@@ -1,15 +1,17 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { FileText } from 'lucide-react';
+import { FileText, LogOut, ShieldAlert, HeartHandshake, Trophy } from 'lucide-react';
 import { A11yToggle } from '../../components/common/A11yToggle';
 import { useAccessibilityStore } from '../../contexts/useAccessibilityStore';
 import { useUserStore } from '../../contexts/useUserStore';
+import { useAuthStore } from '../../contexts/useAuthStore';
 import { useHaptics } from '../../hooks/useHaptics';
 import { USER_NEEDS } from '../../services/mockData';
 
 export default function UserProfile() {
   const navigate = useNavigate();
+  const { user, logout } = useAuthStore();
   const {
     highContrast, toggleHighContrast,
     dyslexiaFont, toggleDyslexiaFont,
@@ -88,6 +90,12 @@ export default function UserProfile() {
                 outline: 'none', fontFamily: 'inherit',
               }}
             />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8, background: '#FEF3C7', padding: '4px 8px', borderRadius: 'var(--r-full)', width: 'fit-content' }}>
+              <Trophy size={14} color="#D97706" />
+              <span style={{ fontSize: 'var(--fs-xs)', fontWeight: 'var(--fw-bold)', color: '#92400E' }}>
+                {profile.points} Community Points
+              </span>
+            </div>
           </div>
         </div>
       </div>
@@ -174,6 +182,28 @@ export default function UserProfile() {
             </div>
             <div style={{ background: 'rgba(255,255,255,0.2)', padding: 12, borderRadius: '50%' }}>
               <FileText size={24} />
+            </div>
+          </motion.div>
+          <motion.div
+            whileTap={{ scale: 0.98 }}
+            onClick={() => { tap(); navigate('/companion'); }}
+            style={{
+              background: 'linear-gradient(135deg, #3B82F6, #8B5CF6)',
+              borderRadius: 'var(--r-xl)', padding: 'var(--sp-5)', marginTop: 'var(--sp-3)',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              cursor: 'pointer', color: '#fff', boxShadow: 'var(--shadow-md)',
+            }}
+          >
+            <div>
+              <h2 id="companion-heading" style={{ fontSize: 'var(--fs-lg)', fontWeight: 'var(--fw-extrabold)', marginBottom: 4 }}>
+                Companion Connect
+              </h2>
+              <p style={{ fontSize: 'var(--fs-sm)', opacity: 0.9 }}>
+                Request a volunteer for your visit
+              </p>
+            </div>
+            <div style={{ background: 'rgba(255,255,255,0.2)', padding: 12, borderRadius: '50%' }}>
+              <HeartHandshake size={24} />
             </div>
           </motion.div>
         </section>
@@ -290,6 +320,28 @@ export default function UserProfile() {
             <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--clr-text-muted)' }}>WCAG AA Compliant</span>
             <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--clr-text-muted)' }}>v1.0.0 · © 2026</span>
           </div>
+        </section>
+
+        {/* ── Sign Out ── */}
+        <section>
+          <motion.button
+            whileTap={{ scale: 0.98 }}
+            onClick={() => {
+               tap();
+               logout();
+               navigate('/auth/login');
+            }}
+            style={{
+              width: '100%', padding: '16px', borderRadius: 'var(--r-xl)',
+              background: 'rgba(239, 68, 68, 0.1)', border: '2px solid rgba(239, 68, 68, 0.2)',
+              color: 'var(--clr-alert-red)', fontWeight: 'var(--fw-bold)', fontSize: 'var(--fs-base)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+              cursor: 'pointer'
+            }}
+          >
+            <LogOut size={20} />
+            Sign Out Securely
+          </motion.button>
         </section>
       </div>
     </div>

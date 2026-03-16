@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell } from 'recharts';
 import { useSpring, animated } from '@react-spring/web';
-import { ArrowLeft, Navigation, Phone, Clock, CheckCircle, Loader, Volume2 } from 'lucide-react';
+import { ArrowLeft, Navigation, Phone, Clock, CheckCircle, Loader, Volume2, Camera } from 'lucide-react';
 import { AlertBanner } from '../../components/facility/AlertBanner';
 import { ScoreBadge } from '../../components/facility/ScoreBadge';
 import { useHaptics } from '../../hooks/useHaptics';
@@ -271,6 +271,16 @@ export default function FacilityDetails() {
                       }}>{t}</span>
                     ))}
                   </div>
+                  
+                  {r.proofImage && (
+                    <div style={{ marginTop: 12, borderRadius: 'var(--r-md)', overflow: 'hidden', border: '1px solid var(--clr-border)', position: 'relative' }}>
+                      <img src={r.proofImage} alt="User uploaded accessibility proof" style={{ width: '100%', height: 120, objectFit: 'cover', display: 'block' }} />
+                      <div style={{ position: 'absolute', bottom: 8, right: 8, background: 'rgba(0,0,0,0.6)', color: '#fff', fontSize: '10px', padding: '2px 6px', borderRadius: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <Camera size={10} /> Verified Proof
+                      </div>
+                    </div>
+                  )}
+
                   <button
                     onClick={() => { tap(); speak(`Review by ${r.author}. Score ${r.rating}. ${r.text}`, { force: true }); }}
                     aria-label={`Read review by ${r.author} aloud`}

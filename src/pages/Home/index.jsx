@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Bell, MapPin, Volume2, VolumeX, HelpCircle } from 'lucide-react';
+import { Search, Bell, MapPin, Volume2, VolumeX, HelpCircle, Video } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Hero3D } from '../../components/home/Hero3D';
 import { MicButton } from '../../components/common/MicButton';
@@ -86,9 +86,10 @@ export default function Home() {
       {/* ── Hero ── */}
       <div style={{
         position: 'relative',
-        background: 'linear-gradient(160deg,#EFF6FF 0%,#F0FDF4 100%)',
+        background: 'linear-gradient(160deg, var(--clr-primary-light) 0%, var(--clr-secondary-light) 100%)',
         padding: 'var(--sp-6) var(--sp-4) var(--sp-8)',
         overflow: 'hidden',
+        boxShadow: '0 4px 20px -10px rgba(0,0,0,0.1)',
       }}>
         <Hero3D />
         
@@ -114,6 +115,20 @@ export default function Home() {
               }}
             >
               <HelpCircle size={18} color="var(--clr-text-primary)" />
+            </motion.button>
+            {/* Interpreter Booking Link */}
+            <motion.button
+              whileTap={{ scale: 0.9 }}
+              onClick={() => { tap(); navigate('/interpreter'); }}
+              aria-label="Interpreter Booking"
+              style={{
+                width: 40, height: 40, borderRadius: '50%',
+                background: '#fff', border: '1.5px solid var(--clr-border)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                cursor: 'pointer', boxShadow: 'var(--shadow-sm)',
+              }}
+            >
+              <Video size={18} color="var(--clr-text-primary)" />
             </motion.button>
             {/* TTS toggle in topnav */}
             <motion.button
