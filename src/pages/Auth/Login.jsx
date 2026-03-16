@@ -85,7 +85,7 @@ export default function Login() {
               type="button"
               whileHover={{ y: -4, scale: 1.03, boxShadow: `0 10px 20px -10px ${r.glow}` }}
               whileTap={{ scale: 0.95 }}
-              onClick={() => performLogin(r.email, 'password123', r.label)}
+              onClick={() => performLogin(r.email, 'demo1234', r.label)}
               disabled={loading}
               style={{
                 background: activeRole === r.label ? r.bg : 'rgba(255,255,255,0.03)',

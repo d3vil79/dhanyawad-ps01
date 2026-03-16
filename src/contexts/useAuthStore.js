@@ -1,44 +1,63 @@
 import { create } from 'zustand';
 
+const API = 'http://localhost:5000/api';
+
 export const useAuthStore = create((set) => ({
-  user: null, // { id, name, email, role: 'patient'|'doctor'|'hospital'|'admin' }
+  user: null,
   isAuthenticated: false,
+  token: null,
 
   login: async (email, password) => {
-    // Simulate API delay
-    await new Promise(r => setTimeout(r, 1200));
-    
-    // Mock authentication check based on email string matching
-    let role = 'patient';
-    if (email.includes('doctor')) role = 'doctor';
-    if (email.includes('hospital') || email.includes('clinic')) role = 'hospital';
-    if (email.includes('admin')) role = 'admin';
-
-    set({
-      user: {
-        id: Math.random().toString(36).slice(2),
-        name: email.split('@')[0],
-        email,
-        role,
-      },
-      isAuthenticated: true,
+    const res = await fetch(`${API}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
     });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Login failed');
+
+    set({ user: data.user, isAuthenticated: true, token: data.token });
+    // Store token in localStorage so it survives page refreshes
+    localStorage.setItem('accesscare_token', data.token);
+    return data.user;
   },
 
   register: async (userData) => {
-    // Simulate API delay
-    await new Promise(r => setTimeout(r, 1500));
-    
-    set({
-      user: {
-        id: Math.random().toString(36).slice(2),
-        ...userData
-      },
-      isAuthenticated: true,
+    const res = await fetch(`${API}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(userData),
     });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Registration failed');
+
+    set({ user: data.user, isAuthenticated: true, token: data.token });
+    localStorage.setItem('accesscare_token', data.token);
+    return data.user;
+  },
+
+  // Call this on app load to re-authenticate from stored token
+  restoreSession: async () => {
+    const token = localStorage.getItem('accesscare_token');
+    if (!token) return;
+
+    try {
+      const res = await fetch(`${API}/auth/me`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error('Session expired');
+      const data = await res.json();
+      set({ user: data.user, isAuthenticated: true, token });
+    } catch {
+      localStorage.removeItem('accesscare_token');
+      set({ user: null, isAuthenticated: false, token: null });
+    }
   },
 
   logout: () => {
-    set({ user: null, isAuthenticated: false });
-  }
+    localStorage.removeItem('accesscare_token');
+    set({ user: null, isAuthenticated: false, token: null });
+  },
 }));
