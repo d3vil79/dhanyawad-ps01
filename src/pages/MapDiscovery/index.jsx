@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, useMap, GeoJSON, LayersControl } from 'react-leaflet';
-import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useNearby } from '../../hooks/useNearby';
 import { useLocationStore } from '../../contexts/useLocationStore';
@@ -28,8 +27,10 @@ function MapController({ coords, routeGeoJSON }) {
   // If a route is generated, fit map bounds to the route
   useEffect(() => {
     if (routeGeoJSON) {
-      const geoLayer = L.geoJSON(routeGeoJSON);
-      map.fitBounds(geoLayer.getBounds(), { padding: [50, 50], animate: true });
+      import('leaflet').then(({ default: L }) => {
+        const geoLayer = L.geoJSON(routeGeoJSON);
+        map.fitBounds(geoLayer.getBounds(), { padding: [50, 50], animate: true });
+      });
     }
   }, [routeGeoJSON]);
 
