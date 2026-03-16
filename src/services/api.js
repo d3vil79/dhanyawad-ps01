@@ -10,7 +10,8 @@ export const getMockFallbackFacilities = (lat, lng) => [
     images: ['https://images.unsplash.com/photo-1586773860418-d37222d8fce3?auto=format&fit=crop&q=80&w=800'],
     coords: { lat: lat + 0.01, lng: lng + 0.01 },
     verified: true,
-    alert: null
+    alert: null,
+    reviews: []
   },
   {
     id: 'mock-2',
@@ -23,7 +24,8 @@ export const getMockFallbackFacilities = (lat, lng) => [
     images: ['https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&q=80&w=800'],
     coords: { lat: lat - 0.015, lng: lng - 0.005 },
     verified: true,
-    alert: { type: 'amber', message: 'Elevator B is currently under maintenance.' }
+    alert: { type: 'amber', message: 'Elevator B is currently under maintenance.' },
+    reviews: []
   }
 ];
 
@@ -111,6 +113,7 @@ export async function fetchOSMFacilities(lat, lng, radiusRadiusInMeters = 5000) 
         verified: pseudoFeatures.verified,
         alert: pseudoFeatures.alert,
         contact: p.phone ? { phone: p.phone } : undefined,
+        reviews: []
       };
     });
 
@@ -154,6 +157,7 @@ export async function getFacilityById(id) {
         images: pseudoFeatures.images,
         verified: pseudoFeatures.verified,
         alert: pseudoFeatures.alert,
+        reviews: []
       };
     }
   } catch(e) { /* ignore */ }
