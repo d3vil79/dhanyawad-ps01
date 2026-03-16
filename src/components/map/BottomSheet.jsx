@@ -1,11 +1,40 @@
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { X, MapPin } from 'lucide-react';
+import { X, MapPin, Navigation } from 'lucide-react';
 import { ScoreBadge } from '../facility/ScoreBadge';
 import { formatDistance } from '../../utils/formatters';
+import { useHaptics } from '../../hooks/useHaptics';
 
-export function BottomSheet({ facility, onClose }) {
+export function BottomSheet({ facility, onClose, userCoords, onRouteCalculated }) {
   const navigate = useNavigate();
+  const { tap } = useHaptics();
+  const [routing, setRouting] = useState(false);
+
+  const handleNavigate = async () => {
+    if (!userCoords || !facility) return;
+    tap();
+    setRouting(true);
+    try {
+      // OSRM expects coordinates in lng,lat format
+      const sx = userCoords.lng;
+      const sy = userCoords.lat;
+      const dx = facility.coords.lng;
+      const dy = facility.coords.lat;
+      
+      const res = await fetch(`https://router.project-osrm.org/route/v1/driving/${sx},${sy};${dx},${dy}?overview=full&geometries=geojson`);
+      const data = await res.json();
+      
+      if (data.code === 'Ok' && data.routes.length > 0) {
+        onRouteCalculated(data.routes[0].geometry, facility);
+        onClose(); // Hide sheet so user can see the route
+      }
+    } catch (e) {
+      console.error("OSRM routing error:", e);
+    } finally {
+      setRouting(false);
+    }
+  };
 
   return (
     <AnimatePresence>
@@ -18,7 +47,7 @@ export function BottomSheet({ facility, onClose }) {
             exit={{ opacity: 0 }}
             onClick={onClose}
             style={{
-              position: 'fixed',
+              position: 'absolute',
               inset: 0,
               background: 'rgba(0,0,0,0.3)',
               zIndex: 90,
@@ -34,7 +63,7 @@ export function BottomSheet({ facility, onClose }) {
             exit={{ y: '100%' }}
             transition={{ type: 'spring', stiffness: 280, damping: 28 }}
             style={{
-              position: 'fixed',
+              position: 'absolute',
               bottom: 80,
               left: 0,
               right: 0,
@@ -87,23 +116,45 @@ export function BottomSheet({ facility, onClose }) {
               </div>
             </div>
 
-            <button
-              onClick={() => navigate(`/facility/${facility.id}`)}
-              style={{
-                marginTop: 'var(--sp-4)',
-                width: '100%',
-                padding: '12px',
-                borderRadius: 'var(--r-lg)',
-                background: 'var(--clr-primary)',
-                color: '#fff',
-                fontWeight: 'var(--fw-semibold)',
-                fontSize: 'var(--fs-base)',
-                border: 'none',
-                cursor: 'pointer',
-              }}
-            >
-              View Full Details →
-            </button>
+            <div style={{ display: 'flex', gap: 'var(--sp-2)', marginTop: 'var(--sp-4)' }}>
+              <button
+                onClick={handleNavigate}
+                disabled={routing || !userCoords}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  borderRadius: 'var(--r-lg)',
+                  background: 'var(--clr-secondary)',
+                  color: '#fff',
+                  fontWeight: 'var(--fw-semibold)',
+                  fontSize: 'var(--fs-base)',
+                  border: 'none',
+                  cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                  opacity: routing ? 0.7 : 1,
+                }}
+              >
+                <Navigation size={18} />
+                {routing ? 'Routing…' : 'Navigate'}
+              </button>
+              
+              <button
+                onClick={() => navigate(`/facility/${facility.id}`)}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  borderRadius: 'var(--r-lg)',
+                  background: 'var(--clr-primary)',
+                  color: '#fff',
+                  fontWeight: 'var(--fw-semibold)',
+                  fontSize: 'var(--fs-base)',
+                  border: 'none',
+                  cursor: 'pointer',
+                }}
+              >
+                Full Details →
+              </button>
+            </div>
           </motion.div>
         </>
       )}

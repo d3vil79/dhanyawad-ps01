@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from 'react';
-import { FACILITIES } from '../services/mockData';
+import { useState, useEffect } from 'react';
+import { fetchOSMFacilities, setFacilityCache } from '../services/api';
 import { useLocationStore } from '../contexts/useLocationStore';
 
 function haversineDistance(a, b) {
@@ -15,48 +15,64 @@ function haversineDistance(a, b) {
 /**
  * useNearby
  *
- * Filters and sorts facilities by distance from the user's location.
- *
- * Smart fallback:
- *  - First tries facilities within maxKm (default 20km).
- *  - If fewer than 3 results (e.g. real GPS is far from demo coords), returns
- *    ALL facilities sorted by distance so the app always shows something useful.
+ * Fetches real facilities from Overpass API (OSM) around the user's live GPS coords.
  */
-export function useNearby({ categories = [], maxKm = 20000, query = '' } = {}) {
-  const { coords } = useLocationStore();
+export function useNearby({ categories = [], maxKm = 20, query = '' } = {}) {
+  const { coords, hasRealLocation } = useLocationStore();
   const [loading, setLoading] = useState(true);
+  const [facilities, setFacilities] = useState([]);
 
-  // Simulate initial loading shimmer
   useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 900);
-    return () => clearTimeout(timer);
-  }, []);
+    let active = true;
+    
+    // Only search if we have coords (even default ones)
+    if (!coords) return;
+    
+    const fetchRealData = async () => {
+      setLoading(true);
+      
+      // Radius default 5km, but if we don't have real location, expand 
+      // heavily so we find something anywhere on earth to keep demo working
+      const radiusMeters = hasRealLocation ? maxKm * 1000 : 50000; 
 
-  const facilities = useMemo(() => {
-    const withDistance = FACILITIES.map(f => ({
-      ...f,
-      distance: haversineDistance(coords, f.coords),
-    }));
+      try {
+        const results = await fetchOSMFacilities(coords.lat, coords.lng, radiusMeters);
+        if (!active) return;
+        
+        // Calculate dynamic distances
+        const withDistance = results.map(f => ({
+          ...f,
+          distance: haversineDistance(coords, f.coords),
+        }));
 
-    const filtered = withDistance.filter(f => {
-      const matchesCat = categories.length === 0 || categories.some(c => f.categories.includes(c));
-      const matchesQuery = !query ||
-        f.name.toLowerCase().includes(query.toLowerCase()) ||
-        f.address.toLowerCase().includes(query.toLowerCase());
-      return f.distance <= maxKm && matchesCat && matchesQuery;
-    });
-
-    // Smart fallback: if nothing passes category/query filters at all, show all sorted
-    const base = filtered.length > 0 ? filtered : withDistance.filter(f => {
-      const matchesCat = categories.length === 0 || categories.some(c => f.categories.includes(c));
-      const matchesQuery = !query ||
-        f.name.toLowerCase().includes(query.toLowerCase()) ||
-        f.address.toLowerCase().includes(query.toLowerCase());
-      return matchesCat && matchesQuery;
-    });
-
-    return base.sort((a, b) => a.distance - b.distance);
-  }, [coords, categories, maxKm, query]);
+        // Filter
+        let filtered = withDistance.filter(f => {
+          const matchesCat = categories.length === 0 || categories.some(c => f.categories.includes(c));
+          const matchesQuery = !query ||
+            f.name.toLowerCase().includes(query.toLowerCase()) ||
+            f.address.toLowerCase().includes(query.toLowerCase());
+          return matchesCat && matchesQuery;
+        });
+        
+        // Sort and cache
+        filtered.sort((a, b) => a.distance - b.distance);
+        setFacilityCache(filtered);
+        setFacilities(filtered);
+        
+      } catch (e) {
+        console.error("useNearby fetch error:", e);
+      } finally {
+        if (active) setLoading(false);
+      }
+    };
+    
+    // Debounce the fetch slightly to avoid slamming OSM API if coords update rapidly
+    const timer = setTimeout(fetchRealData, 400);
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [coords?.lat, coords?.lng, categories.join(','), query, maxKm, hasRealLocation]);
 
   return { facilities, loading };
 }

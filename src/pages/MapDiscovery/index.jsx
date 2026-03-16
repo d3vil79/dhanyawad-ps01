@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, useMap, GeoJSON } from 'react-leaflet';
+import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useNearby } from '../../hooks/useNearby';
 import { useLocationStore } from '../../contexts/useLocationStore';
@@ -8,16 +9,29 @@ import { useHaptics } from '../../hooks/useHaptics';
 import { createCustomIcon } from '../../services/mapService';
 import { BottomSheet } from '../../components/map/BottomSheet';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Locate, MapPin } from 'lucide-react';
+import { Locate, MapPin, Navigation2, X } from 'lucide-react';
 
 /**
  * Inner component — auto-pans map when user's real GPS coords arrive.
  */
-function MapController({ coords }) {
+function MapController({ coords, routeGeoJSON }) {
   const map = useMap();
+
   useEffect(() => {
-    map.setView([coords.lat, coords.lng], 14, { animate: true });
-  }, [coords.lat, coords.lng]);
+    // Only auto-pan to GPS if we aren't displaying a full route
+    if (!routeGeoJSON) {
+      map.setView([coords.lat, coords.lng], 14, { animate: true });
+    }
+  }, [coords.lat, coords.lng, routeGeoJSON]);
+
+  // If a route is generated, fit map bounds to the route
+  useEffect(() => {
+    if (routeGeoJSON) {
+      const geoLayer = L.geoJSON(routeGeoJSON);
+      map.fitBounds(geoLayer.getBounds(), { padding: [50, 50], animate: true });
+    }
+  }, [routeGeoJSON]);
+
   return null;
 }
 
@@ -49,6 +63,10 @@ export default function MapDiscovery() {
   const [selected, setSelected] = useState(null);
   const [locToast, setLocToast] = useState('');
 
+  // Routing state
+  const [routeGeoJSON, setRouteGeoJSON] = useState(null);
+  const [routeTarget, setRouteTarget] = useState(null);
+
   // Start GPS watch when map mounts
   useEffect(() => {
     speak('Map view. Showing accessible facilities near you.');
@@ -73,6 +91,19 @@ export default function MapDiscovery() {
   const handleRecenter = () => {
     tap();
     speak('Recentered map to your location.');
+  };
+
+  const handleRouteCalculated = (geojson, targetFacility) => {
+    setRouteGeoJSON(geojson);
+    setRouteTarget(targetFacility);
+    speak(`Route calculated to ${targetFacility.name}. Follow the highlighted path.`);
+  };
+
+  const clearRoute = () => {
+    tap();
+    setRouteGeoJSON(null);
+    setRouteTarget(null);
+    speak('Navigation cancelled.');
   };
 
   return (
@@ -134,6 +165,41 @@ export default function MapDiscovery() {
         </div>
       </motion.div>
 
+      {/* Active Route Header (replaces top overlay visually if navigating) */}
+      <AnimatePresence>
+        {routeTarget && (
+          <motion.div
+            initial={{ y: -70, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -70, opacity: 0 }}
+            style={{
+              position: 'absolute', top: 0, left: 0, right: 0, zIndex: 550,
+              background: 'var(--clr-primary)', color: '#fff',
+              padding: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              boxShadow: 'var(--shadow-lg)'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <Navigation2 size={24} />
+              <div>
+                <p style={{ fontSize: 'var(--fs-xs)', opacity: 0.9, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Navigating to</p>
+                <p style={{ fontWeight: 'var(--fw-bold)', fontSize: 'var(--fs-base)' }}>{routeTarget.name}</p>
+              </div>
+            </div>
+            <button
+              onClick={clearRoute}
+              aria-label="Cancel navigation"
+              style={{
+                background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: '50%',
+                width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#fff'
+              }}
+            >
+              <X size={20} />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* GPS Toast */}
       <AnimatePresence>
         {locToast && (
@@ -141,7 +207,7 @@ export default function MapDiscovery() {
             role="status"
             aria-live="polite"
             initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
+            animate={{ y: routeTarget ? 88 : 0, opacity: 1 }}
             exit={{ opacity: 0 }}
             style={{
               position: 'absolute', top: 68, left: '50%', transform: 'translateX(-50%)',
@@ -149,6 +215,7 @@ export default function MapDiscovery() {
               color: '#fff', padding: '6px 16px', borderRadius: 'var(--r-full)',
               fontSize: 'var(--fs-xs)', fontWeight: 'var(--fw-semibold)',
               whiteSpace: 'nowrap', boxShadow: 'var(--shadow-md)',
+              transition: 'transform 0.3s ease',
             }}
           >
             {locToast}
@@ -169,8 +236,24 @@ export default function MapDiscovery() {
           attribution="© OpenStreetMap contributors"
         />
 
-        {/* Auto-pan when GPS updates */}
-        <MapController coords={coords} />
+        {/* The active navigation route line */}
+        {routeGeoJSON && (
+          <GeoJSON 
+            key={JSON.stringify(routeGeoJSON)} // Force re-render on new route
+            data={routeGeoJSON} 
+            style={{
+              color: 'var(--clr-primary)',
+              weight: 6,
+              opacity: 0.8,
+              lineCap: 'round',
+              lineJoin: 'round',
+              dashArray: '1, 10' // dotted styling for walking/driving path
+            }}
+          />
+        )}
+
+        {/* Auto-pan when GPS updates or Route generates */}
+        <MapController coords={coords} routeGeoJSON={routeGeoJSON} />
 
         {/* Facility markers */}
         {facilities.map(f => (
@@ -194,7 +277,12 @@ export default function MapDiscovery() {
       </MapContainer>
 
       {/* BottomSheet preview */}
-      <BottomSheet facility={selected} onClose={() => setSelected(null)} />
+      <BottomSheet 
+        facility={selected} 
+        userCoords={coords}
+        onClose={() => setSelected(null)} 
+        onRouteCalculated={handleRouteCalculated}
+      />
     </div>
   );
 }
