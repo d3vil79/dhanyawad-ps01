@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell } from 'recharts';
+import { useSpring, animated } from '@react-spring/web';
 import { ArrowLeft, Navigation, Phone, Clock, CheckCircle, Loader, Volume2 } from 'lucide-react';
 import { AlertBanner } from '../../components/facility/AlertBanner';
-import { FeatureAccordion } from '../../components/facility/FeatureAccordion';
 import { ScoreBadge } from '../../components/facility/ScoreBadge';
 import { useHaptics } from '../../hooks/useHaptics';
 import { useAccessibilityStore } from '../../contexts/useAccessibilityStore';
@@ -53,16 +54,29 @@ export default function FacilityDetails() {
     speak(`Opening navigation to ${facility?.name}.`);
   };
 
+  const chartData = facility ? [
+    { name: 'Motor', val: facility.categories.includes('wheelchair') ? facility.score * 10 : 40, color: '#3B82F6' },
+    { name: 'Visual', val: facility.categories.includes('visual') ? facility.score * 9.5 : 35, color: '#8B5CF6' },
+    { name: 'Cognitive', val: facility.categories.includes('cognitive') ? facility.score * 9 : 30, color: '#F59E0B' },
+    { name: 'Hearing', val: facility.categories.includes('hearing') ? facility.score * 9.2 : 45, color: '#10B981' },
+    { name: 'Sensory', val: facility.categories.includes('sensory') ? facility.score * 8.8 : 50, color: '#EC4899' },
+  ] : [];
+
+  const graphSpring = useSpring({
+    from: { opacity: 0, y: 30 },
+    to: { opacity: facility ? 1 : 0, y: facility ? 0 : 30 },
+    delay: 200,
+    config: { tension: 200, friction: 20 }
+  });
+
   const readFacilityAloud = () => {
     if (!facility) return;
     tap();
-    const featureText = Object.values(facility.features)
-      .map(cat => {
-        const avail = cat.items.filter(i => i.available).map(i => i.name).join(', ');
-        return `${cat.label}: ${avail || 'none available'}`;
-      }).join('. ');
+    const catsText = facility.categories?.length 
+      ? `Specific accessibility support includes: ${facility.categories.join(', ')}.`
+      : '';
     speak(
-      `${facility.name}. Score ${facility.score} out of 10. ${facility.address}. ${facility.hours}. ${featureText}`,
+      `${facility.name}. Score ${facility.score} out of 10. ${facility.address}. ${facility.hours}. ${catsText}`,
       { force: true }
     );
   };
@@ -201,17 +215,30 @@ export default function FacilityDetails() {
           </div>
         )}
 
-        {/* Accessibility Features */}
-        <div style={{ marginBottom: 'var(--sp-6)' }}>
-          <h2 style={{ fontSize: 'var(--fs-base)', fontWeight: 'var(--fw-bold)', color: 'var(--clr-text-primary)', marginBottom: 'var(--sp-3)' }}>
-            ♿ Accessibility Features
+        {/* Analytics Graph */}
+        <animated.div style={{ ...graphSpring, marginBottom: 'var(--sp-6)' }}>
+          <h2 style={{ fontSize: 'var(--fs-base)', fontWeight: 'var(--fw-bold)', color: 'var(--clr-text-primary)', marginBottom: 'var(--sp-4)' }}>
+            📊 Accessibility Breakdown
           </h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-2)' }}>
-            {Object.entries(facility.features).map(([key, cat], i) => (
-              <FeatureAccordion key={key} title={cat.label} items={cat.items} defaultOpen={i === 0} />
-            ))}
+          <div style={{ height: 260, background: 'var(--clr-bg-card)', borderRadius: 'var(--r-xl)', padding: 'var(--sp-4)', border: '1px solid var(--clr-border)', boxShadow: 'var(--shadow-sm)' }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <XAxis dataKey="name" fontSize={11} tickLine={false} axisLine={false} dy={8} />
+                <YAxis fontSize={11} tickLine={false} axisLine={false} domain={[0, 100]} />
+                <Tooltip 
+                  cursor={{ fill: 'rgba(0,0,0,0.04)' }} 
+                  contentStyle={{ borderRadius: 'var(--r-md)', border: 'none', boxShadow: 'var(--shadow-lg)', fontSize: 13, fontWeight: 'var(--fw-bold)' }}
+                  formatter={(value) => [`${value.toFixed(1)}%`, 'Proficiency']}
+                />
+                <Bar dataKey="val" radius={[6, 6, 0, 0]}>
+                  {chartData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
           </div>
-        </div>
+        </animated.div>
 
         {/* Reviews */}
         {facility.reviews.length > 0 && (
