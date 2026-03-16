@@ -346,3 +346,67 @@ ul, ol { list-style: none; }
   animation: spin 0.7s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* --- v2 Accessibility: Lines, Focus, Oversize --- */
+body.reading-ruler {
+  position: relative;
+}
+.reading-ruler-overlay {
+  position: fixed;
+  left: 0; right: 0;
+  height: 120px;
+  background: transparent;
+  box-shadow: 0 -100vh 0 100vh rgba(0, 0, 0, 0.4), 0 100vh 0 100vh rgba(0, 0, 0, 0.4);
+  pointer-events: none;
+  z-index: var(--z-modal);
+  transform: translateY(-50%);
+  border-top: 2px solid var(--clr-primary);
+  border-bottom: 2px solid var(--clr-primary);
+  display: none;
+}
+body.reading-ruler .reading-ruler-overlay {
+  display: block;
+}
+
+/* Oversized Tap Targets for Motor Tremors */
+body.large-targets .btn,
+body.large-targets a,
+body.large-targets input,
+body.large-targets select,
+body.large-targets button {
+  min-height: 56px !important;
+  min-width: 56px !important;
+  font-size: calc(var(--fs-base) * 1.1) !important;
+}
+
+/* Reactive Spotlight Hover Container */
+.spotlight-wrapper {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--r-xl);
+}
+.spotlight-wrapper::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: radial-gradient(circle 350px at var(--mouse-x, 0) var(--mouse-y, 0), rgba(37, 99, 235, 0.08), transparent 40%);
+  opacity: 0;
+  transition: opacity 0.3s;
+  pointer-events: none;
+  z-index: 10;
+}
+body:not(.high-contrast) .spotlight-wrapper:hover::before {
+  opacity: 1;
+}
+
+/* 2-Column Responsive Grid */
+.responsive-grid {
+  display: grid;
+  gap: var(--sp-4);
+  grid-template-columns: 1fr;
+}
+@media (min-width: 768px) {
+  .responsive-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

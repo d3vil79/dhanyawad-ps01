@@ -252,8 +252,8 @@ export default function Home() {
 
         {/* Cards */}
         {loading ? (
-          <div style={{ display: 'grid', gap: 'var(--sp-4)' }}>
-            {[1, 2, 3].map(i => <SkeletonCard key={i} />)}
+          <div className="responsive-grid">
+            {[1, 2, 3, 4].map(i => <SkeletonCard key={i} />)}
           </div>
         ) : facilities.length === 0 ? (
           <div style={{ textAlign: 'center', padding: 'var(--sp-12) var(--sp-4)', color: 'var(--clr-text-muted)' }}>
@@ -262,7 +262,7 @@ export default function Home() {
             <p style={{ fontSize: 'var(--fs-sm)', marginTop: 4 }}>Try adjusting your filters or search.</p>
           </div>
         ) : (
-          <div style={{ display: 'grid', gap: 'var(--sp-4)' }}>
+          <div className="responsive-grid">
             {facilities.map((f, i) => (
               <FacilityCard key={f.id} facility={f} index={i} />
             ))}

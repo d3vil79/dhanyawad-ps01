@@ -10,6 +10,8 @@ export default function UserProfile() {
   const {
     highContrast, toggleHighContrast,
     dyslexiaFont, toggleDyslexiaFont,
+    readingRuler, toggleReadingRuler,
+    largeTapTargets, toggleLargeTargets,
     ttsEnabled, toggleTts,
     fontSize, setFontSize,
     speak,
@@ -153,6 +155,20 @@ export default function UserProfile() {
             ⚙️ Accessibility Settings
           </h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-3)' }}>
+            <A11yToggle
+              id="large-targets"
+              label="Oversized Tap Targets"
+              description="Increases button sizes and padding for easier tapping"
+              checked={largeTapTargets}
+              onChange={() => { tap(); toggleLargeTargets(); }}
+            />
+            <A11yToggle
+              id="reading-ruler"
+              label="Reading Focus Ruler"
+              description="Dims screen to help track reading lines"
+              checked={readingRuler}
+              onChange={() => { tap(); toggleReadingRuler(); }}
+            />
             <A11yToggle
               id="high-contrast"
               label="High Contrast Mode"

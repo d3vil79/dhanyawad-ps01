@@ -6,17 +6,42 @@ export const useAccessibilityStore = create((set, get) => ({
   ttsEnabled: false,
   fontSize: 'base', // 'base' | 'lg' | 'xl'
 
+  readingRuler: false,
+  largeTapTargets: false,
+
+  toggleReadingRuler: () => {
+    const next = !get().readingRuler;
+    set({ readingRuler: next });
+    document.body.classList.toggle('reading-ruler', next);
+    if ('speechSynthesis' in window && get().ttsEnabled) {
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(
+        new SpeechSynthesisUtterance(next ? 'Reading ruler enabled.' : 'Reading ruler disabled.')
+      );
+    }
+  },
+
+  toggleLargeTargets: () => {
+    const next = !get().largeTapTargets;
+    set({ largeTapTargets: next });
+    document.body.classList.toggle('large-targets', next);
+    if ('speechSynthesis' in window && get().ttsEnabled) {
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(
+        new SpeechSynthesisUtterance(next ? 'Oversized tap targets enabled.' : 'Oversized tap targets disabled.')
+      );
+    }
+  },
+
   toggleHighContrast: () => {
     const next = !get().highContrast;
     set({ highContrast: next });
     document.body.classList.toggle('high-contrast', next);
-    // Speak confirmation without checking ttsEnabled so user knows it worked
     if ('speechSynthesis' in window && get().ttsEnabled) {
       window.speechSynthesis.cancel();
-      const utt = new SpeechSynthesisUtterance(
-        next ? 'High contrast mode enabled.' : 'High contrast mode disabled.'
+      window.speechSynthesis.speak(
+        new SpeechSynthesisUtterance(next ? 'High contrast mode enabled.' : 'High contrast mode disabled.')
       );
-      window.speechSynthesis.speak(utt);
     }
   },
 
@@ -26,10 +51,9 @@ export const useAccessibilityStore = create((set, get) => ({
     document.body.classList.toggle('dyslexia', next);
     if ('speechSynthesis' in window && get().ttsEnabled) {
       window.speechSynthesis.cancel();
-      const utt = new SpeechSynthesisUtterance(
-        next ? 'Dyslexia friendly font enabled.' : 'Default font restored.'
+      window.speechSynthesis.speak(
+        new SpeechSynthesisUtterance(next ? 'Dyslexia friendly font enabled.' : 'Default font restored.')
       );
-      window.speechSynthesis.speak(utt);
     }
   },
 
@@ -39,8 +63,7 @@ export const useAccessibilityStore = create((set, get) => ({
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
       if (next) {
-        const utt = new SpeechSynthesisUtterance('Text to speech is now enabled.');
-        window.speechSynthesis.speak(utt);
+        window.speechSynthesis.speak(new SpeechSynthesisUtterance('Text to speech is now enabled.'));
       }
     }
   },
@@ -52,9 +75,7 @@ export const useAccessibilityStore = create((set, get) => ({
     const labels = { base: 'Normal', lg: 'Large', xl: 'Extra large' };
     if (get().ttsEnabled && 'speechSynthesis' in window) {
       window.speechSynthesis.cancel();
-      window.speechSynthesis.speak(
-        new SpeechSynthesisUtterance(`Text size set to ${labels[size]}.`)
-      );
+      window.speechSynthesis.speak(new SpeechSynthesisUtterance(`Text size set to ${labels[size]}.`));
     }
   },
 

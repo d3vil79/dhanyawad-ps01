@@ -1,8 +1,7 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Home, Map, User, Star } from 'lucide-react';
-import { useState } from 'react';
+import { Home, Map, User, Star, Type, Contrast, Maximize } from 'lucide-react';
 import { useAccessibilityStore } from '../contexts/useAccessibilityStore';
 import { useHaptics } from '../hooks/useHaptics';
 
@@ -15,8 +14,16 @@ const NAV_ITEMS = [
 
 export function MainAppLayout({ children }) {
   const [sosActive, setSosActive] = useState(false);
-  const { speak } = useAccessibilityStore();
-  const { tap, error: errVib } = useHaptics();
+  const [rulerY, setRulerY] = useState(0);
+  
+  const { 
+    speak, readingRuler,
+    highContrast, toggleHighContrast,
+    fontSize, setFontSize,
+    largeTapTargets, toggleLargeTargets
+  } = useAccessibilityStore();
+  
+  const { tap } = useHaptics();
   const location = useLocation();
 
   // Announce page changes to TTS
@@ -24,6 +31,18 @@ export function MainAppLayout({ children }) {
     const item = NAV_ITEMS.find(n => n.to === location.pathname);
     if (item) speak(item.announce);
   }, [location.pathname]);
+
+  // Track mouse for reading ruler
+  useEffect(() => {
+    if (!readingRuler) return;
+    const handleMove = (e) => setRulerY(e.clientY);
+    window.addEventListener('mousemove', handleMove);
+    window.addEventListener('touchmove', (e) => setRulerY(e.touches[0].clientY));
+    return () => {
+      window.removeEventListener('mousemove', handleMove);
+      window.removeEventListener('touchmove', handleMove); // cleanup touch
+    };
+  }, [readingRuler]);
 
   const handleSOS = () => {
     tap();
@@ -33,12 +52,57 @@ export function MainAppLayout({ children }) {
     setTimeout(() => setSosActive(false), 4000);
   };
 
+  const handleFontCycle = () => {
+    tap();
+    if (fontSize === 'base') setFontSize('lg');
+    else if (fontSize === 'lg') setFontSize('xl');
+    else setFontSize('base');
+  };
+
   return (
     <div style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column', background: 'var(--clr-bg)' }}>
-      {/* Main */}
+      {/* Reading Ruler Overlay */}
+      <div 
+        className="reading-ruler-overlay" 
+        style={{ top: rulerY }} 
+        aria-hidden="true" 
+      />
+
+      {/* Main Content */}
       <main id="main-content" tabIndex={-1} style={{ flex: 1, overflowY: 'auto', paddingBottom: 80 }}>
         {children}
       </main>
+
+      {/* ─── QUICK ACCESS A11Y FLOATING TOOLBAR ─── */}
+      <div style={{
+        position: 'fixed', top: '50%', right: 12, transform: 'translateY(-50%)',
+        display: 'flex', flexDirection: 'column', gap: 8,
+        background: 'var(--clr-bg-card)', padding: 6,
+        borderRadius: 'var(--r-full)', boxShadow: 'var(--shadow-xl)',
+        border: '1px solid var(--clr-border)', zIndex: 'var(--z-elevated)'
+      }}>
+        <button 
+          onClick={handleFontCycle} 
+          aria-label="Cycle Text Size"
+          style={{ width: 44, height: 44, borderRadius: '50%', background: fontSize !== 'base' ? 'var(--clr-primary-light)' : 'transparent', color: fontSize !== 'base' ? 'var(--clr-primary)' : 'var(--clr-text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+        >
+          <Type size={20} />
+        </button>
+        <button 
+          onClick={() => { tap(); toggleHighContrast(); }} 
+          aria-label="Toggle High Contrast"
+          style={{ width: 44, height: 44, borderRadius: '50%', background: highContrast ? 'var(--clr-primary-light)' : 'transparent', color: highContrast ? 'var(--clr-primary)' : 'var(--clr-text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+        >
+          <Contrast size={20} />
+        </button>
+        <button 
+          onClick={() => { tap(); toggleLargeTargets(); }} 
+          aria-label="Toggle Oversized Buttons"
+          style={{ width: 44, height: 44, borderRadius: '50%', background: largeTapTargets ? 'var(--clr-primary-light)' : 'transparent', color: largeTapTargets ? 'var(--clr-primary)' : 'var(--clr-text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+        >
+          <Maximize size={20} />
+        </button>
+      </div>
 
       {/* Floating SOS */}
       <motion.button

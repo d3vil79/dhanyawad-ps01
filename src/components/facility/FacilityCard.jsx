@@ -13,26 +13,27 @@ export function FacilityCard({ facility, index = 0 }) {
       aria-label={`${facility.name}, score ${facility.score}`}
       initial={{ opacity: 0, y: 28 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{
-        type: 'spring',
-        stiffness: 280,
-        damping: 24,
-        delay: index * 0.07,
-      }}
+      transition={{ type: 'spring', stiffness: 280, damping: 24, delay: index * 0.07 }}
       whileHover={{ y: -3, boxShadow: 'var(--shadow-lg)' }}
       onClick={() => navigate(`/facility/${facility.id}`)}
+      onMouseMove={(e) => {
+        const rect = e.currentTarget.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        e.currentTarget.style.setProperty('--mouse-x', `${x}px`);
+        e.currentTarget.style.setProperty('--mouse-y', `${y}px`);
+      }}
+      className="spotlight-wrapper"
       style={{
         background: 'var(--clr-bg-card)',
-        borderRadius: 'var(--r-xl)',
         border: '1px solid var(--clr-border)',
         boxShadow: 'var(--shadow-sm)',
-        overflow: 'hidden',
         cursor: 'pointer',
         transition: 'box-shadow var(--transition-base)',
       }}
     >
       {/* Image */}
-      <div style={{ position: 'relative', height: 180, overflow: 'hidden', background: 'var(--clr-surface)' }}>
+      <div style={{ position: 'relative', height: 180, overflow: 'hidden', background: 'var(--clr-surface)', zIndex: 1 }}>
         <img
           src={facility.images[0]}
           alt={`${facility.name} entrance`}
