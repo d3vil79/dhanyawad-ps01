@@ -1,31 +1,79 @@
 export const getMockFallbackFacilities = (lat, lng) => [
   {
     id: 'mock-1',
-    name: 'City General Hospital (Mock)',
-    address: '123 Main St',
+    name: 'Metropolis Complete Care Hospital',
+    address: '1000 Wellness Blvd, Metropolis',
     distance: 2.5,
-    score: 8.5,
-    categories: ['wheelchair', 'visual', 'cognitive'],
+    score: 9.8,
+    categories: ['wheelchair', 'visual', 'cognitive', 'hearing', 'sensory'],
     hours: 'Open 24/7',
-    images: ['https://images.unsplash.com/photo-1586773860418-d37222d8fce3?auto=format&fit=crop&q=80&w=800'],
-    coords: { lat: lat + 0.01, lng: lng + 0.01 },
+    images: [
+      'https://images.unsplash.com/photo-1586773860418-d37222d8fce3?auto=format&fit=crop&q=80&w=800',
+      'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&q=80&w=800'
+    ],
+    coords: { lat: lat + 0.012, lng: lng + 0.015 },
     verified: true,
     alert: null,
-    reviews: []
+    reviews: [
+      { id: 'r1', author: 'Sarah J.', rating: 10, text: 'Absolutely incredible facility. Wide doors, braille everywhere, and the staff is completely sensory-aware.', tags: ['Wheelchair Access', 'Sensory Friendly'] },
+      { id: 'r2', author: 'Mark T.', rating: 9, text: 'The smart ramps and automatic doors make navigating here a breeze. Only issue was parking was slightly full.', tags: ['Parking'] }
+    ]
   },
   {
     id: 'mock-2',
-    name: 'Sunrise Community Clinic (Mock)',
-    address: '456 Oak Ave',
+    name: 'Sunrise Community & Rehabilitation Clinic',
+    address: '456 Oak Ave, District 4',
     distance: 4.2,
-    score: 9.2,
+    score: 8.2,
     categories: ['wheelchair', 'hearing'],
     hours: '9:00 AM - 6:00 PM',
-    images: ['https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&q=80&w=800'],
+    images: [
+      'https://images.unsplash.com/photo-1516549655169-df83a0774514?auto=format&fit=crop&q=80&w=800',
+      'https://images.unsplash.com/photo-1538108149393-cebb47ac17e7?auto=format&fit=crop&q=80&w=800'
+    ],
     coords: { lat: lat - 0.015, lng: lng - 0.005 },
     verified: true,
-    alert: { type: 'amber', message: 'Elevator B is currently under maintenance.' },
-    reviews: []
+    alert: { type: 'amber', message: 'Elevator B in the East Wing is currently under maintenance. Please use Elevator A.' },
+    reviews: [
+      { id: 'r3', author: 'David L.', rating: 8, text: 'Great hearing loops included at reception. The staff knew basic sign language which was incredibly comforting.', tags: ['ASL', 'Hearing Loop'] }
+    ]
+  },
+  {
+    id: 'mock-3',
+    name: 'Pioneer Advanced Neurology Center',
+    address: '88 Brainerd Lane, Tech District',
+    distance: 7.1,
+    score: 9.4,
+    categories: ['cognitive', 'visual', 'sensory'],
+    hours: '8:00 AM - 8:00 PM',
+    images: [
+      'https://images.unsplash.com/photo-1551076805-e166946c9eb9?auto=format&fit=crop&q=80&w=800'
+    ],
+    coords: { lat: lat + 0.025, lng: lng - 0.02 },
+    verified: true,
+    alert: null,
+    reviews: [
+      { id: 'r4', author: 'Emily R.', rating: 10, text: 'They have a dedicated quiet room for cognitive overload. The lighting is soft, not fluorescent. Perfect.', tags: ['Quiet Room', 'Lighting'] },
+      { id: 'r5', author: 'Jon W.', rating: 9, text: 'Clear high-contrast signage helped my mother navigate independently.', tags: ['Signage', 'Visual'] }
+    ]
+  },
+  {
+    id: 'mock-4',
+    name: 'Valley Emergency Orthopedics',
+    address: '12 River Road, West Valley',
+    distance: 12.4,
+    score: 7.5,
+    categories: ['wheelchair'],
+    hours: '24/7 Trauma Center',
+    images: [
+      'https://images.unsplash.com/photo-1502740479091-635887520276?auto=format&fit=crop&q=80&w=800'
+    ],
+    coords: { lat: lat - 0.03, lng: lng + 0.025 },
+    verified: false,
+    alert: { type: 'red', message: 'Temporary closure of the main wheelchair ramp due to frozen pipes. Temporary ramp installed at North entrance.' },
+    reviews: [
+      { id: 'r6', author: 'Pete.', rating: 7, text: 'Getting inside was tricky because of the ramp closure, but the doctors are amazing.', tags: ['Ramp Issue'] }
+    ]
   }
 ];
 

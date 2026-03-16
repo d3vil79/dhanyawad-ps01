@@ -49,9 +49,11 @@ export default function FacilityDetails() {
     setTimeout(() => { setPingState('idle'); setShowPingConfirm(false); }, 5000);
   };
 
-  const handleNavigate = () => {
+  const handleNavigate = (e) => {
+    e.preventDefault();
     tap();
     speak(`Opening navigation to ${facility?.name}.`);
+    navigate('/map', { state: { routeTo: facility } });
   };
 
   const chartData = facility ? [
@@ -295,10 +297,7 @@ export default function FacilityDetails() {
         display: 'flex', gap: 12, zIndex: 50,
       }}>
         {/* Navigate */}
-        <motion.a
-          href={`https://www.google.com/maps/search/?api=1&query=${facility.coords.lat},${facility.coords.lng}`}
-          target="_blank"
-          rel="noopener noreferrer"
+        <motion.button
           aria-label={`Get directions to ${facility.name}`}
           onClick={handleNavigate}
           whileTap={{ scale: 0.96 }}
@@ -307,11 +306,11 @@ export default function FacilityDetails() {
             padding: '14px', borderRadius: 'var(--r-lg)',
             border: '2px solid var(--clr-primary)', color: 'var(--clr-primary)',
             fontWeight: 'var(--fw-semibold)', fontSize: 'var(--fs-sm)',
-            background: 'transparent', textDecoration: 'none',
+            background: 'transparent', cursor: 'pointer',
           }}
         >
           <Navigation size={16} aria-hidden="true" /> Navigate
-        </motion.a>
+        </motion.button>
 
         {/* Ping Pre-Arrival */}
         <motion.button

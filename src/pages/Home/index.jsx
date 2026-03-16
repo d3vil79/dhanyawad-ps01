@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Bell, MapPin, Volume2, VolumeX } from 'lucide-react';
+import { Search, Bell, MapPin, Volume2, VolumeX, HelpCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { Hero3D } from '../../components/home/Hero3D';
 import { MicButton } from '../../components/common/MicButton';
 import { PillTag } from '../../components/common/PillTag';
 import { FacilityCard } from '../../components/facility/FacilityCard';
@@ -84,11 +85,15 @@ export default function Home() {
     <div style={{ background: 'var(--clr-bg)', minHeight: '100dvh' }}>
       {/* ── Hero ── */}
       <div style={{
+        position: 'relative',
         background: 'linear-gradient(160deg,#EFF6FF 0%,#F0FDF4 100%)',
         padding: 'var(--sp-6) var(--sp-4) var(--sp-8)',
+        overflow: 'hidden',
       }}>
+        <Hero3D />
+        
         {/* TopNav */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--sp-6)' }}>
+        <div style={{ position: 'relative', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--sp-6)' }}>
           <div>
             <p style={{ fontSize: 'var(--fs-sm)', color: 'var(--clr-text-muted)', marginBottom: 2 }}>{greeting()},</p>
             <h1 style={{ fontSize: 'var(--fs-2xl)', fontWeight: 'var(--fw-extrabold)', color: 'var(--clr-text-primary)', lineHeight: 'var(--lh-tight)' }}>
@@ -96,6 +101,20 @@ export default function Home() {
             </h1>
           </div>
           <div style={{ display: 'flex', gap: 'var(--sp-2)', alignItems: 'center' }}>
+            {/* Q&A Help Link */}
+            <motion.button
+              whileTap={{ scale: 0.9 }}
+              onClick={() => { tap(); navigate('/qna'); }}
+              aria-label="Help and Q and A"
+              style={{
+                width: 40, height: 40, borderRadius: '50%',
+                background: '#fff', border: '1.5px solid var(--clr-border)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                cursor: 'pointer', boxShadow: 'var(--shadow-sm)',
+              }}
+            >
+              <HelpCircle size={18} color="var(--clr-text-primary)" />
+            </motion.button>
             {/* TTS toggle in topnav */}
             <motion.button
               whileTap={{ scale: 0.9 }}
@@ -137,7 +156,7 @@ export default function Home() {
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 'var(--sp-4)' }}
+          style={{ position: 'relative', zIndex: 10, display: 'flex', alignItems: 'center', gap: 6, marginBottom: 'var(--sp-4)' }}
         >
           <MapPin size={13} color={hasRealLocation ? 'var(--clr-secondary)' : 'var(--clr-text-muted)'} />
           <span style={{ fontSize: 'var(--fs-xs)', color: hasRealLocation ? 'var(--clr-secondary)' : 'var(--clr-text-muted)', fontWeight: 'var(--fw-medium)' }}>
@@ -159,7 +178,7 @@ export default function Home() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          style={{ display: 'flex', gap: 'var(--sp-3)', alignItems: 'center' }}
+          style={{ position: 'relative', zIndex: 10, display: 'flex', gap: 'var(--sp-3)', alignItems: 'center' }}
         >
           <div style={{ flex: 1, position: 'relative', display: 'flex', alignItems: 'center' }}>
             <Search size={18} color="var(--clr-text-muted)" style={{ position: 'absolute', left: 14, pointerEvents: 'none' }} aria-hidden="true" />

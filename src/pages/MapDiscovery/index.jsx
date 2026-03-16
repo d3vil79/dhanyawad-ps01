@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, useMap, GeoJSON } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -56,6 +57,7 @@ function RecenterBtn({ coords, onPress }) {
 }
 
 export default function MapDiscovery() {
+  const { state } = useLocation();
   const { coords, hasRealLocation, fetchLocation, watchLocation, loading, error } = useLocationStore();
   const { speak } = useAccessibilityStore();
   const { tap } = useHaptics();
@@ -71,6 +73,12 @@ export default function MapDiscovery() {
   useEffect(() => {
     speak('Map view. Showing accessible facilities near you.');
     const stopWatch = watchLocation();
+    
+    // Check if we came from Internal Navigation
+    if (state?.routeTo && hasRealLocation) {
+      handleAutoRouteLaunch(state.routeTo);
+    }
+    
     return stopWatch;
   }, []);
 
@@ -79,8 +87,29 @@ export default function MapDiscovery() {
     if (hasRealLocation) {
       setLocToast('📍 Using your real GPS location');
       setTimeout(() => setLocToast(''), 3000);
+      
+      // If we arrived internally before GPS locked, do it now
+      if (state?.routeTo && !routeGeoJSON) {
+        handleAutoRouteLaunch(state.routeTo);
+      }
     }
-  }, [hasRealLocation]);
+  }, [hasRealLocation, state?.routeTo]);
+
+  const handleAutoRouteLaunch = async (targetFacility) => {
+    try {
+      const p1 = `${coords.lng},${coords.lat}`;
+      const p2 = `${targetFacility.coords.lng},${targetFacility.coords.lat}`;
+      const osrmUrl = `https://router.project-osrm.org/route/v1/foot/${p1};${p2}?overview=full&geometries=geojson`;
+      const res = await fetch(osrmUrl);
+      const data = await res.json();
+      if (data.routes && data.routes[0]) {
+        handleRouteCalculated(data.routes[0].geometry, targetFacility);
+        setSelected(targetFacility); // Auto select the marker too
+      }
+    } catch (e) {
+      console.error("OSRM route fetch failed", e);
+    }
+  };
 
   const handleMarkerClick = (f) => {
     tap();

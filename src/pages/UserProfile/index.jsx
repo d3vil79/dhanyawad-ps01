@@ -1,5 +1,7 @@
 import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { FileText } from 'lucide-react';
 import { A11yToggle } from '../../components/common/A11yToggle';
 import { useAccessibilityStore } from '../../contexts/useAccessibilityStore';
 import { useUserStore } from '../../contexts/useUserStore';
@@ -7,6 +9,7 @@ import { useHaptics } from '../../hooks/useHaptics';
 import { USER_NEEDS } from '../../services/mockData';
 
 export default function UserProfile() {
+  const navigate = useNavigate();
   const {
     highContrast, toggleHighContrast,
     dyslexiaFont, toggleDyslexiaFont,
@@ -147,6 +150,32 @@ export default function UserProfile() {
               );
             })}
           </div>
+        </section>
+
+        {/* ── Medical Records Portal ── */}
+        <section aria-labelledby="records-heading">
+          <motion.div
+            whileTap={{ scale: 0.98 }}
+            onClick={() => { tap(); navigate('/medical-records'); }}
+            style={{
+              background: 'linear-gradient(135deg, var(--clr-primary), var(--clr-secondary))',
+              borderRadius: 'var(--r-xl)', padding: 'var(--sp-5)',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              cursor: 'pointer', color: '#fff', boxShadow: 'var(--shadow-md)',
+            }}
+          >
+            <div>
+              <h2 id="records-heading" style={{ fontSize: 'var(--fs-lg)', fontWeight: 'var(--fw-extrabold)', marginBottom: 4 }}>
+                My Medical Records
+              </h2>
+              <p style={{ fontSize: 'var(--fs-sm)', opacity: 0.9 }}>
+                View prescriptions and health alerts
+              </p>
+            </div>
+            <div style={{ background: 'rgba(255,255,255,0.2)', padding: 12, borderRadius: '50%' }}>
+              <FileText size={24} />
+            </div>
+          </motion.div>
         </section>
 
         {/* ── A11y Toggles ── */}

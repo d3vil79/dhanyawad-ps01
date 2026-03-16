@@ -6,6 +6,8 @@ import MapDiscovery from './pages/MapDiscovery';
 import FacilityDetails from './pages/FacilityDetails';
 import SubmitReview from './pages/SubmitReview';
 import UserProfile from './pages/UserProfile';
+import MedicalRecords from './pages/MedicalRecords';
+import QnA from './pages/QnA';
 import { useLocationStore } from './contexts/useLocationStore';
 
 export default function App() {
@@ -25,6 +27,8 @@ export default function App() {
           <Route path="/facility/:id" element={<FacilityDetails />} />
           <Route path="/review"       element={<SubmitReview />} />
           <Route path="/profile"      element={<UserProfile />} />
+          <Route path="/medical-records" element={<MedicalRecords />} />
+          <Route path="/qna"          element={<QnA />} />
           <Route path="*" element={
             <div style={{
               display: 'flex', flexDirection: 'column',
