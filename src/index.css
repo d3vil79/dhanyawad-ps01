@@ -1,0 +1,348 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+/* ─── OpenDyslexic via CDN ─── */
+@font-face {
+  font-family: 'OpenDyslexic';
+  src: url('https://fonts.cdnfonts.com/s/14848/OpenDyslexic-Regular.woff') format('woff');
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'OpenDyslexic';
+  src: url('https://fonts.cdnfonts.com/s/14848/OpenDyslexic-Bold.woff') format('woff');
+  font-weight: 700;
+  font-display: swap;
+}
+
+/* ─── CSS Variables ─── */
+:root {
+  /* Colors */
+  --clr-primary: #2563EB;
+  --clr-primary-light: #DBEAFE;
+  --clr-primary-dark: #1D4ED8;
+  --clr-secondary: #059669;
+  --clr-secondary-light: #D1FAE5;
+  --clr-secondary-dark: #047857;
+
+  --clr-bg: #FFFFFF;
+  --clr-bg-secondary: #F8F9FA;
+  --clr-bg-card: #FFFFFF;
+  --clr-surface: #F1F5F9;
+
+  --clr-text-primary: #0F172A;
+  --clr-text-secondary: #475569;
+  --clr-text-muted: #94A3B8;
+  --clr-text-inverse: #FFFFFF;
+
+  --clr-border: #E2E8F0;
+  --clr-border-focus: #2563EB;
+
+  --clr-alert-red: #DC2626;
+  --clr-alert-red-bg: #FEF2F2;
+  --clr-alert-amber: #D97706;
+  --clr-alert-amber-bg: #FFFBEB;
+
+  --clr-score-great: #059669;
+  --clr-score-ok: #D97706;
+  --clr-score-poor: #DC2626;
+
+  /* Typography */
+  --font-base: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-dyslexic: 'OpenDyslexic', 'Comic Sans MS', cursive;
+
+  --fs-xs:   0.75rem;
+  --fs-sm:   0.875rem;
+  --fs-base: 1rem;
+  --fs-lg:   1.125rem;
+  --fs-xl:   1.25rem;
+  --fs-2xl:  1.5rem;
+  --fs-3xl:  1.875rem;
+  --fs-4xl:  2.25rem;
+
+  --fw-regular: 400;
+  --fw-medium:  500;
+  --fw-semibold: 600;
+  --fw-bold:    700;
+  --fw-extrabold: 800;
+
+  --lh-tight:  1.25;
+  --lh-normal: 1.5;
+  --lh-relaxed: 1.75;
+
+  /* Spacing */
+  --sp-1: 0.25rem;
+  --sp-2: 0.5rem;
+  --sp-3: 0.75rem;
+  --sp-4: 1rem;
+  --sp-5: 1.25rem;
+  --sp-6: 1.5rem;
+  --sp-8: 2rem;
+  --sp-10: 2.5rem;
+  --sp-12: 3rem;
+  --sp-16: 4rem;
+
+  /* Radius */
+  --r-sm: 0.375rem;
+  --r-md: 0.75rem;
+  --r-lg: 1rem;
+  --r-xl: 1.5rem;
+  --r-full: 9999px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.05);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.08), 0 2px 6px rgba(0,0,0,0.05);
+  --shadow-lg: 0 10px 40px rgba(0,0,0,0.12), 0 4px 12px rgba(0,0,0,0.06);
+  --shadow-xl: 0 20px 60px rgba(0,0,0,0.15), 0 8px 24px rgba(0,0,0,0.08);
+
+  /* Transitions */
+  --transition-fast: 150ms ease;
+  --transition-base: 250ms ease;
+  --transition-slow: 400ms ease;
+
+  /* Z-index */
+  --z-base: 1;
+  --z-elevated: 10;
+  --z-overlay: 100;
+  --z-modal: 200;
+  --z-toast: 300;
+}
+
+/* ─── High Contrast Mode ─── */
+body.high-contrast {
+  --clr-bg: #000000;
+  --clr-bg-secondary: #111111;
+  --clr-bg-card: #1A1A1A;
+  --clr-surface: #222222;
+  --clr-text-primary: #FFFFFF;
+  --clr-text-secondary: #EEEEEE;
+  --clr-text-muted: #CCCCCC;
+  --clr-border: #555555;
+  --clr-primary: #60A5FA;
+  --clr-primary-light: #1E3A5F;
+  --clr-secondary: #34D399;
+  --clr-secondary-light: #064E3B;
+}
+
+/* ─── Dyslexia Font Mode ─── */
+body.dyslexia * {
+  font-family: var(--font-dyslexic) !important;
+  letter-spacing: 0.05em;
+  word-spacing: 0.1em;
+  line-height: var(--lh-relaxed);
+}
+
+/* ─── Font Size Scale ─── */
+body.font-lg  { font-size: 18px; }
+body.font-xl  { font-size: 20px; }
+
+/* ─── Reset & Base ─── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: var(--font-base);
+  font-size: var(--fs-base);
+  color: var(--clr-text-primary);
+  background-color: var(--clr-bg);
+  line-height: var(--lh-normal);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+img, video { max-width: 100%; height: auto; display: block; }
+button { cursor: pointer; border: none; background: none; font: inherit; }
+a { color: inherit; text-decoration: none; }
+ul, ol { list-style: none; }
+
+/* ─── Focus Rings (keyboard nav) ─── */
+:focus-visible {
+  outline: 3px solid var(--clr-primary);
+  outline-offset: 3px;
+  border-radius: var(--r-sm);
+}
+
+/* ─── Scrollbar ─── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--clr-surface); }
+::-webkit-scrollbar-thumb { background: var(--clr-border); border-radius: var(--r-full); }
+::-webkit-scrollbar-thumb:hover { background: var(--clr-text-muted); }
+
+/* ─── Animations ─── */
+@keyframes shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+@keyframes pulse-ring {
+  0%   { transform: scale(1); opacity: 0.8; }
+  70%  { transform: scale(1.6); opacity: 0; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+
+@keyframes ripple-out {
+  0%   { transform: scale(0); opacity: 0.4; }
+  100% { transform: scale(4); opacity: 0; }
+}
+
+@keyframes slide-up {
+  from { transform: translateY(24px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes pin-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(37,99,235,0.4); }
+  50%       { box-shadow: 0 0 0 10px rgba(37,99,235,0); }
+}
+
+@keyframes waveform {
+  0%, 100% { height: 8px; }
+  50%       { height: 24px; }
+}
+
+@keyframes checkmark-draw {
+  from { stroke-dashoffset: 50; }
+  to   { stroke-dashoffset: 0; }
+}
+
+/* ─── Reduced Motion ─── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ─── Skeleton Shimmer ─── */
+.skeleton {
+  background: linear-gradient(90deg, var(--clr-surface) 25%, var(--clr-border) 50%, var(--clr-surface) 75%);
+  background-size: 800px 100%;
+  animation: shimmer 1.5s infinite linear;
+  border-radius: var(--r-md);
+}
+
+/* ─── Utility Classes ─── */
+.sr-only {
+  position: absolute; width: 1px; height: 1px;
+  padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0,0,0,0); white-space: nowrap; border-width: 0;
+}
+
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.items-center { align-items: center; }
+.justify-center { justify-content: center; }
+.justify-between { justify-content: space-between; }
+.gap-2 { gap: var(--sp-2); }
+.gap-3 { gap: var(--sp-3); }
+.gap-4 { gap: var(--sp-4); }
+.w-full { width: 100%; }
+.overflow-hidden { overflow: hidden; }
+.relative { position: relative; }
+.absolute { position: absolute; }
+
+/* ─── App Shell ─── */
+#root {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--clr-bg);
+}
+
+.app-content {
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: 80px; /* space for bottom nav */
+}
+
+/* ─── Leaflet Override ─── */
+.leaflet-container {
+  z-index: 1;
+  font-family: var(--font-base);
+}
+
+.leaflet-popup-content-wrapper {
+  border-radius: var(--r-lg) !important;
+  box-shadow: var(--shadow-lg) !important;
+  border: none !important;
+}
+
+.leaflet-popup-tip { background: var(--clr-bg-card) !important; }
+
+/* --- Button Styles --- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  font-weight: var(--fw-semibold);
+  border-radius: var(--r-lg);
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition:
+    background var(--transition-base),
+    border-color var(--transition-base),
+    color var(--transition-base),
+    box-shadow var(--transition-base);
+  font-family: inherit;
+  line-height: 1;
+  white-space: nowrap;
+  user-select: none;
+}
+.btn:disabled { opacity: 0.55; cursor: not-allowed; pointer-events: none; }
+
+/* Sizes */
+.btn--sm  { padding: 8px 16px;  font-size: var(--fs-sm);  }
+.btn--md  { padding: 12px 20px; font-size: var(--fs-base); }
+.btn--lg  { padding: 14px 28px; font-size: var(--fs-lg);  }
+
+/* Variants */
+.btn--primary {
+  background: var(--clr-primary);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(37,99,235,0.3);
+}
+.btn--primary:hover { background: var(--clr-primary-dark); box-shadow: 0 4px 14px rgba(37,99,235,0.4); }
+
+.btn--secondary {
+  background: var(--clr-secondary);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(5,150,105,0.3);
+}
+.btn--secondary:hover { background: var(--clr-secondary-dark); }
+
+.btn--ghost {
+  background: transparent;
+  border-color: var(--clr-border);
+  color: var(--clr-text-secondary);
+}
+.btn--ghost:hover { background: var(--clr-surface); }
+
+.btn--danger {
+  background: var(--clr-alert-red);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(220,38,38,0.3);
+}
+.btn--danger:hover { background: #B91C1C; }
+
+/* Icon */
+.btn-icon { display: flex; align-items: center; }
+
+/* Loader spinner */
+.btn-loader {
+  width: 16px; height: 16px;
+  border: 2px solid rgba(255,255,255,0.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
