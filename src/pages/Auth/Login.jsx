@@ -28,9 +28,10 @@ export default function Login() {
     setActiveRole(roleLabel);
     setLoading(true);
     try {
-      await login(targetEmail, targetPassword);
+      const user = await login(targetEmail, targetPassword);
       success();
-      navigate('/');
+      const roleRoutes = { doctor: '/dashboard/doctor', hospital: '/dashboard/hospital', admin: '/dashboard/admin' };
+      navigate(roleRoutes[user?.role] || '/');
     } catch (apiErr) {
       hapticError();
       setErr(apiErr.message || 'Invalid credentials. Try a demo email below.');

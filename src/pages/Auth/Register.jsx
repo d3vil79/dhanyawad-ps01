@@ -39,9 +39,10 @@ export default function Register() {
     
     setLoading(true);
     try {
-      await registerUser(formData);
+      const user = await registerUser(formData);
       success();
-      navigate('/');
+      const roleRoutes = { doctor: '/dashboard/doctor', hospital: '/dashboard/hospital', admin: '/dashboard/admin' };
+      navigate(roleRoutes[user?.role] || '/');
     } catch(err) {
       hapticError();
     } finally {
