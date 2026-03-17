@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion'; // eslint-disable-line no-unused-vars
-import { Home, Map, User, Star, Type, Contrast, Maximize } from 'lucide-react';
+import { Home, Map, User, Star, Type, Contrast, Maximize, Bell, LogOut, X, AlertTriangle, ChevronRight } from 'lucide-react';
 import { useAccessibilityStore } from '../contexts/useAccessibilityStore';
 import { useHaptics } from '../hooks/useHaptics';
+import { useAuthStore } from '../contexts/useAuthStore';
 
 const NAV_ITEMS = [
   { to: '/',        label: 'Home',    Icon: Home,  announce: 'Home page. Find accessible healthcare near you.' },
@@ -15,6 +16,19 @@ const NAV_ITEMS = [
 export function MainAppLayout({ children }) {
   const [sosActive, setSosActive] = useState(false);
   const [rulerY, setRulerY] = useState(0);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [readNotifs, setReadNotifs] = useState([]);
+  const { user, logout } = useAuthStore();
+  const navigate = useNavigate();
+  
+  const NOTIFICATIONS = [
+    { id: 1, icon: '🏥', title: 'New Facility Nearby', body: 'Nexus Rehab Center (score 9.7) is 1.9km away.', time: '2 min ago', link: '/map' },
+    { id: 2, icon: '⚠️', title: 'Accessibility Alert', body: 'North wing ramp closed at HorizonCare Hospital.', time: '18 min ago', link: '/map' },
+    { id: 3, icon: '💬', title: 'Q&A Answer Posted', body: 'Your question about wheelchair access received a reply.', time: '1 hr ago', link: '/qna' },
+    { id: 4, icon: '📋', title: 'Review Reminder', body: 'Rate your recent visit to Sunrise General.', time: '3 hrs ago', link: '/review' },
+  ];
+
+  const unreadCount = NOTIFICATIONS.filter(n => !readNotifs.includes(n.id)).length;
   
   const { 
     speak, readingRuler,
@@ -81,28 +95,101 @@ export function MainAppLayout({ children }) {
         borderRadius: 'var(--r-full)', boxShadow: 'var(--shadow-xl)',
         border: '1px solid var(--clr-border)', zIndex: 'var(--z-elevated)'
       }}>
-        <button 
-          onClick={handleFontCycle} 
+        {/* Bell / Notifications */}
+        <button
+          onClick={() => { tap(); setNotifOpen(o => !o); }}
+          aria-label={`Notifications — ${unreadCount} unread`}
+          style={{ position: 'relative', width: 44, height: 44, borderRadius: '50%', background: notifOpen ? 'var(--clr-primary-light)' : 'transparent', color: notifOpen ? 'var(--clr-primary)' : 'var(--clr-text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', cursor: 'pointer' }}>
+          <Bell size={20} />
+          {unreadCount > 0 && (
+            <span style={{ position: 'absolute', top: 6, right: 6, width: 8, height: 8, borderRadius: '50%', background: '#ef4444', border: '2px solid var(--clr-bg-card)' }} />
+          )}
+        </button>
+        <button
+          onClick={() => { tap(); if (fontSize === 'base') setFontSize('lg'); else if (fontSize === 'lg') setFontSize('xl'); else setFontSize('base'); }}
           aria-label="Cycle Text Size"
-          style={{ width: 44, height: 44, borderRadius: '50%', background: fontSize !== 'base' ? 'var(--clr-primary-light)' : 'transparent', color: fontSize !== 'base' ? 'var(--clr-primary)' : 'var(--clr-text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-        >
+          style={{ width: 44, height: 44, borderRadius: '50%', background: fontSize !== 'base' ? 'var(--clr-primary-light)' : 'transparent', color: fontSize !== 'base' ? 'var(--clr-primary)' : 'var(--clr-text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', cursor: 'pointer' }}>
           <Type size={20} />
         </button>
-        <button 
-          onClick={() => { tap(); toggleHighContrast(); }} 
+        <button
+          onClick={() => { tap(); toggleHighContrast(); }}
           aria-label="Toggle High Contrast"
-          style={{ width: 44, height: 44, borderRadius: '50%', background: highContrast ? 'var(--clr-primary-light)' : 'transparent', color: highContrast ? 'var(--clr-primary)' : 'var(--clr-text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-        >
+          style={{ width: 44, height: 44, borderRadius: '50%', background: highContrast ? 'var(--clr-primary-light)' : 'transparent', color: highContrast ? 'var(--clr-primary)' : 'var(--clr-text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', cursor: 'pointer' }}>
           <Contrast size={20} />
         </button>
-        <button 
-          onClick={() => { tap(); toggleLargeTargets(); }} 
+        <button
+          onClick={() => { tap(); toggleLargeTargets(); }}
           aria-label="Toggle Oversized Buttons"
-          style={{ width: 44, height: 44, borderRadius: '50%', background: largeTapTargets ? 'var(--clr-primary-light)' : 'transparent', color: largeTapTargets ? 'var(--clr-primary)' : 'var(--clr-text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-        >
+          style={{ width: 44, height: 44, borderRadius: '50%', background: largeTapTargets ? 'var(--clr-primary-light)' : 'transparent', color: largeTapTargets ? 'var(--clr-primary)' : 'var(--clr-text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', cursor: 'pointer' }}>
           <Maximize size={20} />
         </button>
+        {/* Logout */}
+        <button
+          onClick={() => { tap(); logout(); navigate('/auth/login'); }}
+          aria-label="Sign out"
+          style={{ width: 44, height: 44, borderRadius: '50%', background: 'transparent', color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', cursor: 'pointer' }}>
+          <LogOut size={18} />
+        </button>
       </div>
+
+      {/* ─── NOTIFICATION PANEL ─── */}
+      <AnimatePresence>
+        {notifOpen && (
+          <motion.div
+            initial={{ x: '100%', opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: '100%', opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+            style={{
+              position: 'fixed', top: 0, right: 0, bottom: 0, width: 300, maxWidth: '85vw',
+              background: 'var(--clr-bg-card)', borderLeft: '1px solid var(--clr-border)',
+              boxShadow: '-12px 0 40px rgba(0,0,0,0.12)', zIndex: 1000,
+              display: 'flex', flexDirection: 'column',
+            }}>
+            <div style={{ padding: '16px 16px 12px', borderBottom: '1px solid var(--clr-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <p style={{ fontWeight: 800, fontSize: 16, color: 'var(--clr-text-primary)' }}>Notifications</p>
+                <p style={{ fontSize: 12, color: 'var(--clr-text-muted)' }}>Hi, {user?.name || 'there'} 👋</p>
+              </div>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                {unreadCount > 0 && (
+                  <button onClick={() => setReadNotifs(NOTIFICATIONS.map(n => n.id))} style={{ fontSize: 11, color: 'var(--clr-primary)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700 }}>Mark all read</button>
+                )}
+                <button onClick={() => setNotifOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--clr-text-muted)', display: 'flex' }}><X size={18} /></button>
+              </div>
+            </div>
+            <div style={{ flex: 1, overflowY: 'auto' }}>
+              {NOTIFICATIONS.map(n => {
+                const isRead = readNotifs.includes(n.id);
+                return (
+                  <motion.div key={n.id} whileTap={{ scale: 0.98 }}
+                    onClick={() => { setReadNotifs(r => [...r, n.id]); setNotifOpen(false); navigate(n.link); tap(); }}
+                    style={{ padding: '14px 16px', borderBottom: '1px solid var(--clr-border)', display: 'flex', gap: 12, cursor: 'pointer', background: isRead ? 'transparent' : 'rgba(0,114,255,0.04)', alignItems: 'flex-start' }}>
+                    <span style={{ fontSize: 22, flexShrink: 0 }}>{n.icon}</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 4, marginBottom: 3 }}>
+                        <p style={{ fontWeight: isRead ? 600 : 800, fontSize: 13, color: 'var(--clr-text-primary)', lineHeight: 1.3 }}>{n.title}</p>
+                        {!isRead && <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--clr-primary)', flexShrink: 0, marginTop: 3 }} />}
+                      </div>
+                      <p style={{ fontSize: 12, color: 'var(--clr-text-muted)', lineHeight: 1.4 }}>{n.body}</p>
+                      <p style={{ fontSize: 11, color: 'var(--clr-text-muted)', marginTop: 4 }}>{n.time}</p>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Backdrop for notification panel */}
+      <AnimatePresence>
+        {notifOpen && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            onClick={() => setNotifOpen(false)}
+            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.3)', zIndex: 999 }} />
+        )}
+      </AnimatePresence>
 
       {/* Floating SOS */}
       <motion.button

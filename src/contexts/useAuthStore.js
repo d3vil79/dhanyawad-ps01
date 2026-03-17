@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { useUserStore } from './useUserStore';
 
 const API = 'http://localhost:5000/api';
 const STORE_KEY = 'accesscare_users';
@@ -83,6 +84,7 @@ export const useAuthStore = create((set) => ({
       const data = await apiLogin(em, password);
       saveSession(data.user);
       localStorage.setItem('accesscare_token', data.token);
+      useUserStore.getState().setName(data.user.name);
       set({ user: data.user, isAuthenticated: true, token: data.token });
       return data.user;
     } catch {/* fall through to local */}
@@ -93,6 +95,7 @@ export const useAuthStore = create((set) => ({
     if (match.password !== password) throw new Error('Incorrect password.');
     const { password: _pw, ...safeUser } = match;
     saveSession(safeUser);
+    useUserStore.getState().setName(safeUser.name);
     set({ user: safeUser, isAuthenticated: true, token: 'local' });
     return safeUser;
   },
@@ -103,6 +106,7 @@ export const useAuthStore = create((set) => ({
       const data = await apiRegister({ name, email: em, password, role });
       saveSession(data.user);
       localStorage.setItem('accesscare_token', data.token);
+      useUserStore.getState().setName(data.user.name);
       set({ user: data.user, isAuthenticated: true, token: data.token });
       return data.user;
     } catch {/* fall through to local */}
@@ -115,6 +119,7 @@ export const useAuthStore = create((set) => ({
     saveLocalUser(newUser);
     const { password: _pw, ...safeUser } = newUser;
     saveSession(safeUser);
+    useUserStore.getState().setName(safeUser.name);
     set({ user: safeUser, isAuthenticated: true, token: 'local' });
     return safeUser;
   },
@@ -126,13 +131,17 @@ export const useAuthStore = create((set) => ({
         const res = await fetch(`${API}/auth/me`, { headers: { Authorization: `Bearer ${token}` } });
         if (res.ok) {
           const { user } = await res.json();
+          useUserStore.getState().setName(user.name);
           set({ user, isAuthenticated: true, token });
           return;
         }
       } catch {/* fall through */}
     }
     const session = loadSession();
-    if (session) set({ user: session, isAuthenticated: true, token: 'local' });
+    if (session) {
+      useUserStore.getState().setName(session.name);
+      set({ user: session, isAuthenticated: true, token: 'local' });
+    }
   },
 
   logout: () => {
