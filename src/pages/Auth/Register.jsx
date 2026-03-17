@@ -14,8 +14,8 @@ const ROLES = [
 
 export default function Register() {
   const navigate = useNavigate();
-  const { register } = useAuthStore();
-  const { tap, success, error } = useHaptics();
+  const { register: registerUser } = useAuthStore();
+  const { tap, success, error: hapticError } = useHaptics();
   
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -33,30 +33,43 @@ export default function Register() {
     e.preventDefault();
     tap();
     if (!formData.email || !formData.password || !formData.name) {
-      error();
+      hapticError();
       return;
     }
     
     setLoading(true);
     try {
-      await register(formData);
+      await registerUser(formData);
       success();
       navigate('/');
     } catch(err) {
-      error();
+      hapticError();
     } finally {
       setLoading(false);
     }
   };
 
+  const inputStyle = {
+    width: '100%',
+    padding: '14px 16px',
+    borderRadius: '8px',
+    background: 'rgba(15, 23, 42, 0.6)',
+    border: '1px solid rgba(255, 255, 255, 0.1)',
+    color: '#FFFFFF',
+    fontSize: '16px',
+    outline: 'none',
+    transition: 'border-color 0.2s ease',
+    boxSizing: 'border-box'
+  };
+
   return (
-    <div className="p-4">
+    <div style={{ padding: '16px', maxWidth: 400, margin: '40px auto' }}>
       {/* Header */}
-      <div className="text-center mb-8">
-        <h1 className="text-2xl font-extrabold mb-2 text-white">
+      <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+        <h1 style={{ fontSize: '24px', fontWeight: 800, color: '#FFFFFF', marginBottom: '8px' }}>
           Create Account
         </h1>
-        <p className="text-slate-400 text-sm">
+        <p style={{ color: '#94a3b8', fontSize: '14px' }}>
           {step === 1 ? 'Select your account type to proceed' : `Complete your ${formData.role} registration`}
         </p>
       </div>
@@ -66,25 +79,36 @@ export default function Register() {
           <motion.div
             key="step1"
             initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
-            className="grid grid-cols-2 gap-3"
+            style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}
           >
             {ROLES.map(role => (
               <motion.button
                 key={role.id}
-                whileHover={{ scale: 1.02 }}
+                whileHover={{ scale: 1.02, backgroundColor: 'rgba(30, 41, 59, 0.8)' }}
                 whileTap={{ scale: 0.96 }}
                 onClick={() => handleRoleSelect(role.id)}
-                className="bg-slate-900/50 rounded-xl p-5 flex flex-col items-center gap-3 cursor-pointer text-white transition-colors hover:bg-slate-800/80"
-                style={{ border: `1px solid ${role.color}40` }}
+                style={{
+                  background: 'rgba(15, 23, 42, 0.5)',
+                  borderRadius: '16px',
+                  padding: '20px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '12px',
+                  cursor: 'pointer',
+                  color: '#FFFFFF',
+                  border: `1px solid ${role.color}40`,
+                  transition: 'all 0.3s ease'
+                }}
               >
-                <div className="p-3 rounded-full" style={{ background: `${role.color}20` }}>
+                <div style={{ padding: '12px', borderRadius: '9999px', background: `${role.color}20`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <role.icon size={28} color={role.color} />
                 </div>
-                <div className="text-center">
-                  <span className="block font-bold text-base mb-0.5">
+                <div style={{ textAlign: 'center' }}>
+                  <span style={{ display: 'block', fontWeight: 700, fontSize: '16px', marginBottom: '2px' }}>
                     {role.label}
                   </span>
-                  <span className="text-[11px] text-slate-400">{role.desc}</span>
+                  <span style={{ fontSize: '11px', color: '#94a3b8' }}>{role.desc}</span>
                 </div>
               </motion.button>
             ))}
@@ -94,37 +118,46 @@ export default function Register() {
             key="step2"
             onSubmit={handleSubmit}
             initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}
-            className="flex flex-col gap-4"
+            style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}
           >
             <div>
               <input type="text" placeholder="Full Name" required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})}
-                className="w-full px-4 py-3.5 rounded-lg bg-slate-900/60 border border-white/10 text-white text-base outline-none transition-colors duration-200 focus:border-blue-500/50" />
+                style={inputStyle} onFocus={(e) => e.target.style.borderColor = 'rgba(59, 130, 246, 0.5)'} onBlur={(e) => e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)'} />
             </div>
             <div>
               <input type="email" placeholder="Email Address" required value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})}
-                className="w-full px-4 py-3.5 rounded-lg bg-slate-900/60 border border-white/10 text-white text-base outline-none transition-colors duration-200 focus:border-blue-500/50" />
+                style={inputStyle} onFocus={(e) => e.target.style.borderColor = 'rgba(59, 130, 246, 0.5)'} onBlur={(e) => e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)'} />
             </div>
             <div>
               <input type="password" placeholder="Password" required value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})}
-                className="w-full px-4 py-3.5 rounded-lg bg-slate-900/60 border border-white/10 text-white text-base outline-none transition-colors duration-200 focus:border-blue-500/50" />
+                style={inputStyle} onFocus={(e) => e.target.style.borderColor = 'rgba(59, 130, 246, 0.5)'} onBlur={(e) => e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)'} />
             </div>
 
             {/* Dynamic Role-Specific Field */}
             {formData.role === 'doctor' && (
-              <input type="text" placeholder="Medical License Number" required value={formData.extraField} onChange={e => setFormData({...formData, extraField: e.target.value})} className="w-full px-4 py-3.5 rounded-lg bg-slate-900/60 border border-white/10 text-white text-base outline-none transition-colors duration-200 focus:border-blue-500/50" />
+              <input type="text" placeholder="Medical License Number" required value={formData.extraField} onChange={e => setFormData({...formData, extraField: e.target.value})} 
+                style={inputStyle} onFocus={(e) => e.target.style.borderColor = 'rgba(59, 130, 246, 0.5)'} onBlur={(e) => e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)'} />
             )}
             {formData.role === 'hospital' && (
-              <input type="text" placeholder="Facility Name" required value={formData.extraField} onChange={e => setFormData({...formData, extraField: e.target.value})} className="w-full px-4 py-3.5 rounded-lg bg-slate-900/60 border border-white/10 text-white text-base outline-none transition-colors duration-200 focus:border-blue-500/50" />
+              <input type="text" placeholder="Facility Name" required value={formData.extraField} onChange={e => setFormData({...formData, extraField: e.target.value})} 
+                style={inputStyle} onFocus={(e) => e.target.style.borderColor = 'rgba(59, 130, 246, 0.5)'} onBlur={(e) => e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)'} />
             )}
             {formData.role === 'admin' && (
-              <input type="text" placeholder="Admin Access Code" required value={formData.extraField} onChange={e => setFormData({...formData, extraField: e.target.value})} className="w-full px-4 py-3.5 rounded-lg bg-slate-900/60 border border-white/10 text-white text-base outline-none transition-colors duration-200 focus:border-blue-500/50" />
+              <input type="text" placeholder="Admin Access Code" required value={formData.extraField} onChange={e => setFormData({...formData, extraField: e.target.value})} 
+                style={inputStyle} onFocus={(e) => e.target.style.borderColor = 'rgba(59, 130, 246, 0.5)'} onBlur={(e) => e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)'} />
             )}
 
-            <div className="flex gap-3 mt-2">
+            <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
               <button
                 type="button"
                 onClick={() => { tap(); setStep(1); }}
-                className="w-12 rounded-lg border border-white/10 bg-white/5 text-white cursor-pointer flex items-center justify-center hover:bg-white/10 transition-colors"
+                style={{
+                  width: '48px', height: '48px', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.1)',
+                  background: 'rgba(255, 255, 255, 0.05)', color: '#FFFFFF', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background-color 0.2s ease'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'}
               >
                 <ArrowLeft size={20} />
               </button>
@@ -132,7 +165,16 @@ export default function Register() {
                 whileTap={{ scale: 0.98 }}
                 type="submit"
                 disabled={loading}
-                className={`flex-1 p-4 text-white border-none rounded-xl font-bold text-base cursor-pointer shadow-[0_8px_16px_-4px_rgba(37,99,235,0.4)] flex items-center justify-center gap-2.5 transition-colors ${loading ? 'bg-slate-600' : 'bg-blue-600 hover:bg-blue-700'}`}
+                style={{
+                  flex: 1, padding: '16px', color: '#FFFFFF', border: 'none', borderRadius: '12px',
+                  fontWeight: 'bold', fontSize: '16px', cursor: 'pointer',
+                  boxShadow: '0 8px 16px -4px rgba(37, 99, 235, 0.4)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
+                  transition: 'background-color 0.2s ease',
+                  background: loading ? '#475569' : '#2563eb'
+                }}
+                onMouseEnter={(e) => !loading && (e.currentTarget.style.background = '#1d4ed8')}
+                onMouseLeave={(e) => !loading && (e.currentTarget.style.background = '#2563eb')}
               >
                 {loading ? 'Creating Account...' : <>Complete Signup <ArrowRight size={18} /></>}
               </motion.button>
@@ -142,12 +184,14 @@ export default function Register() {
       </AnimatePresence>
       
       {step === 1 && (
-        <div className="text-center mt-6">
-          <p className="text-slate-400 text-sm">
+        <div style={{ textAlign: 'center', marginTop: '24px' }}>
+          <p style={{ color: '#94a3b8', fontSize: '14px' }}>
             Already have an account?{' '}
             <button 
               onClick={() => { tap(); navigate('/auth/login'); }}
-              className="bg-transparent border-none text-blue-300 font-bold cursor-pointer p-1 hover:text-blue-200"
+              style={{ background: 'transparent', border: 'none', color: '#93c5fd', fontWeight: 'bold', cursor: 'pointer', padding: '4px' }}
+              onMouseEnter={(e) => e.target.style.color = '#bfdbfe'}
+              onMouseLeave={(e) => e.target.style.color = '#93c5fd'}
             >
               Sign In
             </button>

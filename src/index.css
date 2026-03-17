@@ -1,7 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
-@import "tailwindcss";
-
 /* ─── OpenDyslexic via CDN ─── */
 @font-face {
   font-family: 'OpenDyslexic';
@@ -19,12 +17,12 @@
 /* ─── CSS Variables ─── */
 :root {
   /* Colors */
-  --clr-primary: #0072FF;
-  --clr-primary-light: #E0F2FE;
-  --clr-primary-dark: #005BB5;
-  --clr-secondary: #00C6FF;
-  --clr-secondary-light: #CFFAFE;
-  --clr-secondary-dark: #0099CC;
+  --clr-primary: #2563EB;
+  --clr-primary-light: #DBEAFE;
+  --clr-primary-dark: #1D4ED8;
+  --clr-secondary: #059669;
+  --clr-secondary-light: #D1FAE5;
+  --clr-secondary-dark: #047857;
 
   --clr-bg: #FFFFFF;
   --clr-bg-secondary: #F8F9FA;
@@ -91,10 +89,10 @@
   --r-full: 9999px;
 
   /* Shadows */
-  --shadow-sm: 0 2px 8px -2px rgba(0,0,0,0.05), 0 1px 4px -1px rgba(0,0,0,0.03);
-  --shadow-md: 0 8px 24px -4px rgba(0,0,0,0.08), 0 4px 10px -2px rgba(0,0,0,0.04);
-  --shadow-lg: 0 16px 40px -6px rgba(0,0,0,0.1), 0 8px 16px -4px rgba(0,0,0,0.05);
-  --shadow-xl: 0 24px 60px -10px rgba(0,0,0,0.15), 0 12px 24px -6px rgba(0,0,0,0.08);
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.05);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.08), 0 2px 6px rgba(0,0,0,0.05);
+  --shadow-lg: 0 10px 40px rgba(0,0,0,0.12), 0 4px 12px rgba(0,0,0,0.06);
+  --shadow-xl: 0 20px 60px rgba(0,0,0,0.15), 0 8px 24px rgba(0,0,0,0.08);
 
   /* Transitions */
   --transition-fast: 150ms ease;
@@ -136,6 +134,35 @@ body.dyslexia * {
 /* ─── Font Size Scale ─── */
 body.font-lg  { font-size: 18px; }
 body.font-xl  { font-size: 20px; }
+
+/* ─── Simple Mode (Cognitive Accessibility) ─── */
+body.simple-mode {
+  --r-xl: var(--r-md);
+  --r-lg: var(--r-md);
+}
+
+body.simple-mode * {
+  animation-duration: 0.1ms !important;
+  transition-duration: 0.1ms !important;
+}
+
+body.simple-mode .hide-simple {
+  display: none !important;
+}
+
+body.simple-mode .show-simple {
+  display: block !important;
+}
+
+body.simple-mode .hero-3d-container {
+  display: none !important;
+}
+
+body.simple-mode .smart-banner {
+  background: var(--clr-bg-card) !important;
+  border-color: var(--clr-border) !important;
+  box-shadow: none !important;
+}
 
 /* ─── Reset & Base ─── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -273,11 +300,9 @@ ul, ol { list-style: none; }
 }
 
 .leaflet-popup-content-wrapper {
-  border-radius: var(--r-xl) !important;
-  box-shadow: var(--shadow-xl) !important;
+  border-radius: var(--r-lg) !important;
+  box-shadow: var(--shadow-lg) !important;
   border: none !important;
-  backdrop-filter: blur(12px);
-  background: rgba(255, 255, 255, 0.95) !important;
 }
 
 .leaflet-popup-tip { background: var(--clr-bg-card) !important; }

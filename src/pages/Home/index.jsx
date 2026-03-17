@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Bell, MapPin, Volume2, VolumeX, HelpCircle, Video } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion'; // eslint-disable-line no-unused-vars
+import { Search, MapPin, Volume2, VolumeX, HelpCircle, ChevronDown, Sparkles, AlertTriangle, X, Users, Heart, Share2, PlusCircle, BookOpen, Scale, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Hero3D } from '../../components/home/Hero3D';
 import { MicButton } from '../../components/common/MicButton';
@@ -10,21 +10,26 @@ import { SkeletonCard } from '../../components/common/SkeletonCard';
 import { useVoiceCommand } from '../../hooks/useVoiceCommand';
 import { useHaptics } from '../../hooks/useHaptics';
 import { useNearby } from '../../hooks/useNearby';
+import { useEmergencyAlerts } from '../../hooks/useEmergencyAlerts';
 import { useUserStore } from '../../contexts/useUserStore';
 import { useAccessibilityStore } from '../../contexts/useAccessibilityStore';
 import { useLocationStore } from '../../contexts/useLocationStore';
-import { CATEGORIES } from '../../services/mockData';
+import { CATEGORIES, USER_NEEDS } from '../../services/mockData';
 
 export default function Home() {
   const { profile } = useUserStore();
-  const { speak, stopSpeaking, ttsEnabled, toggleTts } = useAccessibilityStore();
-  const { tap, success } = useHaptics();
-  const { coords, hasRealLocation, fetchLocation, error: locError } = useLocationStore();
+  const { ttsEnabled, toggleTts, speak, stopSpeaking, simpleMode } = useAccessibilityStore();
+  const { tap } = useHaptics();
+  const { hasRealLocation, fetchLocation, error: locError } = useLocationStore();
   const navigate = useNavigate();
 
   const [query, setQuery] = useState('');
   const [activeCategories, setActiveCategories] = useState([]);
   const [voiceError, setVoiceError] = useState(null);
+  const [smartSort, setSmartSort] = useState(true); // default ON
+  const [profileBannerOpen, setProfileBannerOpen] = useState(false);
+
+  const { activeAlert, dismissAlert } = useEmergencyAlerts();
 
   // Voice command: auto-commits final result into search
   const { listening, transcript, error: speechError, startListening, stopListening } = useVoiceCommand({
@@ -35,10 +40,14 @@ export default function Home() {
     },
   });
 
-  const { facilities, loading } = useNearby({
+  const { facilities, loading, smartSortActive } = useNearby({
     categories: activeCategories,
     query: listening ? transcript : query,
+    userNeeds: smartSort ? profile.needs : [],
   });
+
+  // Label for the needs
+  const activeNeedLabels = USER_NEEDS.filter(n => profile.needs.includes(n.id));
 
   // Announce page on arrival (TTS)
   useEffect(() => {
@@ -55,7 +64,9 @@ export default function Home() {
 
   // Show speech errors
   useEffect(() => {
-    if (speechError) setVoiceError(speechError);
+    if (speechError) {
+      setTimeout(() => setVoiceError(speechError), 0);
+    }
   }, [speechError]);
 
   const toggleCategory = (id) => {
@@ -83,26 +94,90 @@ export default function Home() {
 
   return (
     <div style={{ background: 'var(--clr-bg)', minHeight: '100dvh' }}>
+      {/* Emergency Alert Toast */}
+      <AnimatePresence>
+        {activeAlert && (
+          <motion.div
+            initial={{ y: -100, opacity: 0 }}
+            animate={{ y: 20, opacity: 1 }}
+            exit={{ y: -100, opacity: 0 }}
+            onClick={() => { tap(); navigate(`/facility/${activeAlert.facilityId}`); }}
+            style={{
+              position: 'fixed', top: 0, left: 16, right: 16, zIndex: 2000,
+              background: '#FEF2F2', border: '2px solid #EF4444', borderRadius: 'var(--r-xl)',
+              padding: '16px', boxShadow: '0 10px 25px rgba(239, 68, 68, 0.2)',
+              display: 'flex', gap: 12, alignItems: 'flex-start', cursor: 'pointer'
+            }}
+          >
+            <div style={{ padding: 8, background: '#EF4444', borderRadius: 12 }}>
+              <AlertTriangle size={20} color="#fff" />
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                <span style={{ fontWeight: 'var(--fw-bold)', color: '#991B1B', fontSize: 'var(--fs-sm)' }}>
+                  ⚠️ Emergency A11y Alert
+                </span>
+                <span style={{ fontSize: 10, color: '#DC2626' }}>{activeAlert.timestamp}</span>
+              </div>
+              <p style={{ fontSize: 'var(--fs-sm)', color: '#B91C1C', fontWeight: 'var(--fw-medium)', marginBottom: 2 }}>
+                {activeAlert.facilityName}
+              </p>
+              <p style={{ fontSize: 'var(--fs-xs)', color: '#EF4444' }}>
+                {activeAlert.message}
+              </p>
+            </div>
+            <button
+              onClick={(e) => { e.stopPropagation(); dismissAlert(); }}
+              style={{ background: 'none', border: 'none', color: '#EF4444', cursor: 'pointer', padding: 4 }}
+            >
+              <X size={18} />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* ── Hero ── */}
       <div style={{
         position: 'relative',
-        background: 'linear-gradient(160deg, var(--clr-primary-light) 0%, var(--clr-secondary-light) 100%)',
+        background: 'linear-gradient(160deg,#EFF6FF 0%,#F0FDF4 100%)',
         padding: 'var(--sp-6) var(--sp-4) var(--sp-8)',
         overflow: 'hidden',
-        boxShadow: '0 4px 20px -10px rgba(0,0,0,0.1)',
       }}>
-        <Hero3D />
+        {!simpleMode && <Hero3D />}
         
         {/* TopNav */}
         <div style={{ position: 'relative', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--sp-6)' }}>
           <div>
             <p style={{ fontSize: 'var(--fs-sm)', color: 'var(--clr-text-muted)', marginBottom: 2 }}>{greeting()},</p>
             <h1 style={{ fontSize: 'var(--fs-2xl)', fontWeight: 'var(--fw-extrabold)', color: 'var(--clr-text-primary)', lineHeight: 'var(--lh-tight)' }}>
-              {profile.name} 👋
+              {profile.role === 'caregiver' ? 'Care Coordinator' : profile.name} 👋
             </h1>
           </div>
           <div style={{ display: 'flex', gap: 'var(--sp-2)', alignItems: 'center' }}>
-            {/* Q&A Help Link */}
+            {/* Role Toggle */}
+            <motion.button
+              whileTap={{ scale: 0.9 }}
+              onClick={() => {
+                const nextRole = profile.role === 'caregiver' ? 'individual' : 'caregiver';
+                const { setRole } = useUserStore.getState();
+                setRole(nextRole);
+                tap();
+                speak(`Switched to ${nextRole} mode.`);
+              }}
+              style={{
+                height: 40, padding: '0 12px', borderRadius: 'var(--r-full)',
+                background: profile.role === 'caregiver' ? 'var(--clr-secondary)' : 'var(--clr-surface)',
+                border: `1.5px solid ${profile.role === 'caregiver' ? 'var(--clr-secondary)' : 'var(--clr-border)'}`,
+                display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer',
+                boxShadow: 'var(--shadow-sm)',
+                color: profile.role === 'caregiver' ? '#fff' : 'var(--clr-text-primary)'
+              }}
+            >
+              {profile.role === 'caregiver' ? <Heart size={14} fill="#fff" /> : <Users size={14} />}
+              <span style={{ fontSize: 'var(--fs-xs)', fontWeight: 'var(--fw-bold)' }}>
+                {profile.role === 'caregiver' ? 'Caregiver' : 'Individual'}
+              </span>
+            </motion.button>
             <motion.button
               whileTap={{ scale: 0.9 }}
               onClick={() => { tap(); navigate('/qna'); }}
@@ -116,27 +191,11 @@ export default function Home() {
             >
               <HelpCircle size={18} color="var(--clr-text-primary)" />
             </motion.button>
-            {/* Interpreter Booking Link */}
-            <motion.button
-              whileTap={{ scale: 0.9 }}
-              onClick={() => { tap(); navigate('/interpreter'); }}
-              aria-label="Interpreter Booking"
-              style={{
-                width: 40, height: 40, borderRadius: '50%',
-                background: '#fff', border: '1.5px solid var(--clr-border)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                cursor: 'pointer', boxShadow: 'var(--shadow-sm)',
-              }}
-            >
-              <Video size={18} color="var(--clr-text-primary)" />
-            </motion.button>
-            {/* TTS toggle in topnav */}
             <motion.button
               whileTap={{ scale: 0.9 }}
               onClick={() => { tap(); toggleTts(); }}
               aria-label={ttsEnabled ? 'Disable text to speech' : 'Enable text to speech'}
               aria-pressed={ttsEnabled}
-              title={ttsEnabled ? 'TTS On' : 'TTS Off'}
               style={{
                 width: 40, height: 40, borderRadius: '50%',
                 background: ttsEnabled ? 'var(--clr-primary-light)' : '#fff',
@@ -145,10 +204,7 @@ export default function Home() {
                 cursor: 'pointer', boxShadow: 'var(--shadow-sm)',
               }}
             >
-              {ttsEnabled
-                ? <Volume2 size={18} color="var(--clr-primary)" />
-                : <VolumeX size={18} color="var(--clr-text-muted)" />
-              }
+              {ttsEnabled ? <Volume2 size={18} color="var(--clr-primary)" /> : <VolumeX size={18} color="var(--clr-text-muted)" />}
             </motion.button>
             <motion.button
               whileTap={{ scale: 0.9 }}
@@ -175,7 +231,7 @@ export default function Home() {
         >
           <MapPin size={13} color={hasRealLocation ? 'var(--clr-secondary)' : 'var(--clr-text-muted)'} />
           <span style={{ fontSize: 'var(--fs-xs)', color: hasRealLocation ? 'var(--clr-secondary)' : 'var(--clr-text-muted)', fontWeight: 'var(--fw-medium)' }}>
-            {locError ? locError : hasRealLocation ? 'Using your real GPS location' : 'Using default location — tap to update'}
+            {locError || (hasRealLocation ? 'Using real GPS location' : 'Using default location')}
           </span>
           {!hasRealLocation && (
             <motion.button
@@ -201,14 +257,14 @@ export default function Home() {
               type="search"
               value={listening ? transcript : query}
               onChange={e => setQuery(e.target.value)}
-              onFocus={() => speak('Search for healthcare facilities by name or address.')}
+              onFocus={() => speak('Search using names or natural phrases like, hospital with wheelchair MRI nearby.')}
               placeholder={listening ? '🎤 Listening…' : 'Search clinics, hospitals…'}
               aria-label="Search facilities"
               style={{
                 width: '100%',
                 padding: '14px 16px 14px 44px',
                 borderRadius: 'var(--r-xl)',
-                border: `2px solid ${listening ? 'var(--clr-alert-red)' : 'var(--clr-border)'}`,
+                border: `2px solid ${listening ? 'var(--clr-alert-red)' : (query.length > 15 ? 'var(--clr-primary)' : 'var(--clr-border)')}`,
                 background: '#fff',
                 fontSize: 'var(--fs-base)',
                 color: 'var(--clr-text-primary)',
@@ -234,7 +290,214 @@ export default function Home() {
           <MicButton listening={listening} onClick={handleMic} size={52} />
         </motion.div>
 
-        {/* Voice / speech errors */}
+        {/* AI Analysis Active Indicator */}
+        <AnimatePresence>
+          {query.length > 15 && !listening && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              style={{
+                fontWeight: 'var(--fw-medium)'
+              }}
+            >
+              <Sparkles size={12} />
+              <span>AI Analysis Active: Extracting intent & accessibility features…</span>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {profile.role === 'caregiver' ? (
+          /* Care Coordination Dashboard */
+          <motion.div
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            style={{
+              position: 'relative', zIndex: 10,
+              marginTop: 16, padding: '16px',
+              background: 'linear-gradient(135deg, #F0FDF4, #ECFDF5)',
+              border: '1.5px solid #10B981', borderRadius: 'var(--r-xl)',
+              boxShadow: '0 4px 12px rgba(16, 185, 129, 0.1)'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ padding: 6, background: '#10B981', borderRadius: 8 }}>
+                  <Users size={18} color="#fff" />
+                </div>
+                <div>
+                  <div style={{ fontSize: 10, fontWeight: 'var(--fw-bold)', color: '#047857', textTransform: 'uppercase' }}>Coordination Hub</div>
+                  <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-bold)', color: 'var(--clr-text-primary)' }}>Managing {profile.dependents.length} Dependents</div>
+                </div>
+              </div>
+              <PlusCircle size={20} color="#10B981" />
+            </div>
+
+            <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 4 }}>
+              {profile.dependents.map(d => (
+                <motion.button
+                  key={d.id}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => { tap(); const { setActiveDependent } = useUserStore.getState(); setActiveDependent(profile.activeDependentId === d.id ? null : d.id); }}
+                  style={{
+                    padding: '10px 14px', borderRadius: 'var(--r-lg)',
+                    background: profile.activeDependentId === d.id ? '#10B981' : '#fff',
+                    color: profile.activeDependentId === d.id ? '#fff' : 'var(--clr-text-primary)',
+                    border: `1.5px solid ${profile.activeDependentId === d.id ? '#10B981' : 'var(--clr-border)'}`,
+                    boxShadow: 'var(--shadow-sm)', minWidth: 140, cursor: 'pointer', textAlign: 'left'
+                  }}
+                >
+                  <div style={{ fontSize: 'var(--fs-xs)', fontWeight: 'var(--fw-bold)' }}>{d.name}</div>
+                  <div style={{ fontSize: 10, opacity: 0.8 }}>Needs: {d.needs.join(', ')}</div>
+                </motion.button>
+              ))}
+            </div>
+
+            <div style={{ marginTop: 16, display: 'flex', gap: 8 }}>
+              <button style={{
+                flex: 1, padding: '8px', borderRadius: 'var(--r-md)', fontSize: 10, fontWeight: 'var(--fw-bold)',
+                background: '#fff', border: '1px solid var(--clr-border)', color: 'var(--clr-text-secondary)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4
+              }}>
+                <Share2 size={12} /> Share Summary
+              </button>
+              <button style={{
+                flex: 1, padding: '8px', borderRadius: 'var(--r-md)', fontSize: 10, fontWeight: 'var(--fw-bold)',
+                background: '#fff', border: '1px solid var(--clr-border)', color: 'var(--clr-text-secondary)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4
+              }}>
+                <HelpCircle size={12} /> Help Guide
+              </button>
+            </div>
+          </motion.div>
+        ) : (
+          /* Smart Profile Banner (Individual Mode) */
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.15 }}
+            style={{
+              position: 'relative', zIndex: 10,
+              margin: '12px 0 0',
+              background: smartSortActive
+                ? 'linear-gradient(135deg,#EFF6FF,#F0FDF4)'
+                : 'var(--clr-surface)',
+              border: `1.5px solid ${smartSortActive ? 'var(--clr-primary)' : 'var(--clr-border)'}`,
+              borderRadius: 'var(--r-xl)',
+              padding: '10px 14px',
+              transition: 'border-color 0.2s',
+            }}
+          >
+            {/* Header row */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <button
+                onClick={() => { tap(); setProfileBannerOpen(o => !o); }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+                }}
+              >
+                <span style={{ fontSize: 16 }}>🎯</span>
+                <span style={{
+                  fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-bold)',
+                  color: smartSortActive ? 'var(--clr-primary)' : 'var(--clr-text-secondary)',
+                }}>
+                  {smartSortActive ? 'Smart Sort Active' : 'Smart Sort Off'}
+                </span>
+                {profile.needs.length > 0 && (
+                  <span style={{
+                    fontSize: 'var(--fs-xs)', background: 'var(--clr-primary-light)',
+                    color: 'var(--clr-primary)', borderRadius: 'var(--r-full)',
+                    padding: '1px 7px', fontWeight: 'var(--fw-semibold)',
+                  }}>
+                    {profile.needs.length} needs
+                  </span>
+                )}
+                <ChevronDown
+                  size={14}
+                  color="var(--clr-text-muted)"
+                  style={{ transform: profileBannerOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}
+                />
+              </button>
+
+              {/* Toggle smart sort on/off */}
+              <button
+                onClick={() => { tap(); setSmartSort(s => !s); speak(smartSort ? 'Smart sort disabled.' : 'Smart sort enabled. Facilities ranked by your profile.'); }}
+                aria-pressed={smartSort}
+                aria-label={smartSort ? 'Disable smart sort' : 'Enable smart sort'}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  padding: '5px 12px',
+                  borderRadius: 'var(--r-full)',
+                  border: `1.5px solid ${smartSort ? 'var(--clr-primary)' : 'var(--clr-border)'}`,
+                  background: smartSort ? 'var(--clr-primary)' : 'transparent',
+                  color: smartSort ? '#fff' : 'var(--clr-text-secondary)',
+                  cursor: 'pointer', fontSize: 'var(--fs-xs)', fontWeight: 'var(--fw-semibold)',
+                  transition: 'all 0.2s',
+                }}
+              >
+                <Sparkles size={12} />
+                {smartSort ? 'On' : 'Off'}
+              </button>
+            </div>
+
+            {/* Expandable need pills */}
+            <AnimatePresence>
+              {profileBannerOpen && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  style={{ overflow: 'hidden' }}
+                >
+                  <div style={{ paddingTop: 10, display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                    {profile.needs.length === 0 ? (
+                      <button
+                        onClick={() => { tap(); navigate('/profile'); }}
+                        style={{
+                          fontSize: 'var(--fs-xs)', color: 'var(--clr-primary)',
+                          background: 'none', border: 'none', cursor: 'pointer', fontWeight: 'var(--fw-medium)',
+                        }}
+                      >
+                        ➕ Add needs to your profile →
+                      </button>
+                    ) : (
+                      activeNeedLabels.map(need => (
+                        <span
+                          key={need.id}
+                          style={{
+                            display: 'inline-flex', alignItems: 'center', gap: 4,
+                            padding: '3px 10px',
+                            borderRadius: 'var(--r-full)',
+                            background: 'var(--clr-primary-light)',
+                            color: 'var(--clr-primary)',
+                            fontSize: 'var(--fs-xs)', fontWeight: 'var(--fw-medium)',
+                          }}
+                        >
+                          {need.icon} {need.label}
+                        </span>
+                      ))
+                    )}
+
+                    {profile.needs.length > 0 && (
+                      <button
+                        onClick={() => { tap(); navigate('/profile'); }}
+                        style={{
+                          fontSize: 'var(--fs-xs)', color: 'var(--clr-text-muted)',
+                          background: 'none', border: 'none', cursor: 'pointer',
+                          textDecoration: 'underline',
+                        }}
+                      >
+                        Edit profile
+                      </button>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
+        )}
         <AnimatePresence>
           {voiceError && (
             <motion.p
@@ -250,6 +513,56 @@ export default function Home() {
 
       {/* ── Content ── */}
       <div style={{ padding: 'var(--sp-5) var(--sp-4)' }}>
+        {/* Education Hub Billboard */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.3 }}
+          onClick={() => { tap(); navigate('/education'); speak('Opening Education Hub. Learn about your legal rights and advocacy tips.'); }}
+          style={{
+            marginBottom: 'var(--sp-8)',
+            padding: '24px',
+            borderRadius: 'var(--r-2xl)',
+            background: 'linear-gradient(135deg, #1E3A8A 0%, #3B82F6 100%)',
+            color: '#fff',
+            cursor: 'pointer',
+            position: 'relative',
+            overflow: 'hidden',
+            boxShadow: '0 12px 24px rgba(37, 99, 235, 0.2)'
+          }}
+        >
+          {/* Decorative icons */}
+          <div style={{ position: 'absolute', right: -20, top: -20, opacity: 0.1 }}>
+            <BookOpen size={120} />
+          </div>
+          
+          <div style={{ position: 'relative', zIndex: 1 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+              <div style={{ padding: 6, background: 'rgba(255,255,255,0.2)', borderRadius: 8 }}>
+                <Scale size={18} color="#fff" />
+              </div>
+              <span style={{ fontSize: 12, fontWeight: 'var(--fw-bold)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Know Your Rights
+              </span>
+            </div>
+            
+            <h3 style={{ fontSize: 'var(--fs-xl)', fontWeight: 'var(--fw-extrabold)', marginBottom: 8, lineHeight: 'var(--lh-tight)' }}>
+              Accessibility Education Hub
+            </h3>
+            <p style={{ fontSize: 'var(--fs-sm)', opacity: 0.9, marginBottom: 16, maxWidth: '80%' }}>
+              Learn about ADA laws, Section 1557, and how to advocate for yourself in healthcare settings.
+            </p>
+            
+            <button style={{
+              padding: '8px 16px', borderRadius: 'var(--r-lg)', background: '#fff', color: '#1E3A8A',
+              border: 'none', fontWeight: 'var(--fw-bold)', fontSize: 'var(--fs-xs)',
+              display: 'flex', alignItems: 'center', gap: 6
+            }}>
+              Explore Resources <ChevronRight size={14} />
+            </button>
+          </div>
+        </motion.div>
+
         {/* Category Filters */}
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} style={{ marginBottom: 'var(--sp-6)' }}>
           <h2 style={{

@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { fetchOSMFacilities, setFacilityCache } from '../services/api';
 import { useLocationStore } from '../contexts/useLocationStore';
+import { sortByProfileMatch } from '../utils/profileMatcher';
+import { parseSearchIntent } from '../utils/nlpSearch';
 
 function haversineDistance(a, b) {
   const R = 6371;
@@ -16,23 +18,24 @@ function haversineDistance(a, b) {
  * useNearby
  *
  * Fetches real facilities from Overpass API (OSM) around the user's live GPS coords.
+ * When `userNeeds` is set and no manual `categories` filter is active, results are
+ * sorted by profile match score (highest first), then distance.
  */
-export function useNearby({ categories = [], maxKm = 20, query = '' } = {}) {
+export function useNearby({ categories = [], maxKm = 20, query = '', userNeeds = [] } = {}) {
   const { coords, hasRealLocation } = useLocationStore();
   const [loading, setLoading] = useState(true);
   const [facilities, setFacilities] = useState([]);
 
+  const smartSortActive = userNeeds.length > 0 && categories.length === 0;
+
   useEffect(() => {
     let active = true;
     
-    // Only search if we have coords (even default ones)
     if (!coords) return;
     
     const fetchRealData = async () => {
       setLoading(true);
       
-      // Radius default 5km, but if we don't have real location, expand 
-      // heavily so we find something anywhere on earth to keep demo working
       const radiusMeters = hasRealLocation ? maxKm * 1000 : 50000; 
 
       try {
@@ -45,17 +48,46 @@ export function useNearby({ categories = [], maxKm = 20, query = '' } = {}) {
           distance: haversineDistance(coords, f.coords),
         }));
 
-        // Filter
+        // Parse NL intent if query exists and is long enough
+        const intent = query.length > 8 ? parseSearchIntent(query) : null;
+
+        // Filter by manual category and query
         let filtered = withDistance.filter(f => {
-          const matchesCat = categories.length === 0 || categories.some(c => f.categories.includes(c));
-          const matchesQuery = !query ||
-            f.name.toLowerCase().includes(query.toLowerCase()) ||
-            f.address.toLowerCase().includes(query.toLowerCase());
+          // 1. Category Filter (Manual OR NL extracted)
+          const allCategories = [...new Set([...categories, ...(intent?.categories || [])])];
+          const matchesCat = allCategories.length === 0 || allCategories.some(c => f.categories.includes(c));
+
+          // 2. Query/Name Filter
+          const searchSpace = `${f.name} ${f.address}`.toLowerCase();
+          let matchesQuery = !query || searchSpace.includes(query.toLowerCase());
+
+          // 3. NL Specific Filters
+          if (intent) {
+            // Facility Type match (e.g. "hospital")
+            if (intent.facilityType && !f.name.toLowerCase().includes(intent.facilityType)) {
+              matchesQuery = false;
+            }
+
+            // Feature match (e.g. "MRI")
+            if (intent.features.length > 0) {
+              const fString = JSON.stringify(f.features).toLowerCase();
+              if (!intent.features.some(feat => fString.includes(feat))) {
+                matchesQuery = false;
+              }
+            }
+          }
+
           return matchesCat && matchesQuery;
         });
         
-        // Sort and cache
-        filtered.sort((a, b) => a.distance - b.distance);
+        // Sort: profile-match first (when no manual filter), else distance
+        // If NL intent specifies "nearby", prioritize distance over smart sort
+        if (smartSortActive && (!intent || !intent.isNearbyIntent)) {
+          filtered = sortByProfileMatch(filtered, userNeeds);
+        } else {
+          filtered.sort((a, b) => a.distance - b.distance);
+        }
+
         setFacilityCache(filtered);
         setFacilities(filtered);
         
@@ -66,13 +98,13 @@ export function useNearby({ categories = [], maxKm = 20, query = '' } = {}) {
       }
     };
     
-    // Debounce the fetch slightly to avoid slamming OSM API if coords update rapidly
     const timer = setTimeout(fetchRealData, 400);
     return () => {
       active = false;
       clearTimeout(timer);
     };
-  }, [coords?.lat, coords?.lng, categories.join(','), query, maxKm, hasRealLocation]);
+  }, [coords?.lat, coords?.lng, categories.join(','), query, maxKm, hasRealLocation, userNeeds.join(',')]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  return { facilities, loading };
+  return { facilities, loading, smartSortActive };
 }
+

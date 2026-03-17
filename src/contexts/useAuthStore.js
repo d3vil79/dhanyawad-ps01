@@ -17,7 +17,6 @@ function getLocalUsers() {
   try {
     const raw = localStorage.getItem(STORE_KEY);
     const registered = raw ? JSON.parse(raw) : [];
-    // Always include demo users; registered users can override by same email
     const demosNotOverridden = DEMO_USERS.filter(
       d => !registered.find(r => r.email === d.email)
     );
@@ -59,7 +58,7 @@ async function apiLogin(email, password) {
     body: JSON.stringify({ email, password }),
   });
   if (!res.ok) throw new Error((await res.json()).message || 'Login failed');
-  return res.json(); // { user, token }
+  return res.json();
 }
 
 async function apiRegister(data) {
@@ -69,7 +68,7 @@ async function apiRegister(data) {
     body: JSON.stringify(data),
   });
   if (!res.ok) throw new Error((await res.json()).message || 'Register failed');
-  return res.json(); // { user, token }
+  return res.json();
 }
 
 // ── Store ─────────────────────────────────────────────────────────────────────
@@ -78,81 +77,53 @@ export const useAuthStore = create((set) => ({
   isAuthenticated: false,
   token: null,
 
-  // ── LOGIN ─────────────────────────────────────────────────────────────────
   login: async (email, password) => {
     const em = email.toLowerCase().trim();
-
-    // Try real API first
     try {
       const data = await apiLogin(em, password);
-      const user = data.user;
-      saveSession(user);
+      saveSession(data.user);
       localStorage.setItem('accesscare_token', data.token);
-      set({ user, isAuthenticated: true, token: data.token });
-      return user;
-    } catch (apiErr) {
-      // API unavailable — fall back to local auth
-    }
+      set({ user: data.user, isAuthenticated: true, token: data.token });
+      return data.user;
+    } catch {/* fall through to local */}
 
-    // Local fallback
     const users = getLocalUsers();
     const match = users.find(u => u.email === em);
     if (!match) throw new Error('No account found with that email address.');
     if (match.password !== password) throw new Error('Incorrect password.');
-
     const { password: _pw, ...safeUser } = match;
     saveSession(safeUser);
     set({ user: safeUser, isAuthenticated: true, token: 'local' });
     return safeUser;
   },
 
-  // ── REGISTER ─────────────────────────────────────────────────────────────
   register: async ({ name, email, password, role }) => {
     const em = email.toLowerCase().trim();
-
-    // Try real API first
     try {
       const data = await apiRegister({ name, email: em, password, role });
-      const user = data.user;
-      saveSession(user);
+      saveSession(data.user);
       localStorage.setItem('accesscare_token', data.token);
-      set({ user, isAuthenticated: true, token: data.token });
-      return user;
-    } catch (apiErr) {
-      // API unavailable — fall back to local storage
-    }
+      set({ user: data.user, isAuthenticated: true, token: data.token });
+      return data.user;
+    } catch {/* fall through to local */}
 
-    // Local fallback — check email not already taken
     const users = getLocalUsers();
-    if (users.find(u => u.email === em)) {
-      throw new Error('An account with this email already exists.');
-    }
+    if (users.find(u => u.email === em)) throw new Error('An account with this email already exists.');
     if (!name || !email || !password) throw new Error('All fields are required.');
 
-    const newUser = {
-      id: `local-${Date.now()}`,
-      name: name.trim(),
-      email: em,
-      password,
-      role: role || 'patient',
-    };
+    const newUser = { id: `local-${Date.now()}`, name: name.trim(), email: em, password, role: role || 'patient' };
     saveLocalUser(newUser);
-
     const { password: _pw, ...safeUser } = newUser;
     saveSession(safeUser);
     set({ user: safeUser, isAuthenticated: true, token: 'local' });
     return safeUser;
   },
 
-  // ── SESSION RESTORE ───────────────────────────────────────────────────────
   restoreSession: async () => {
-    // Try JWT with real API
     const token = localStorage.getItem('accesscare_token');
     if (token && token !== 'local') {
       try {
-        const res = await fetch(`${API}/auth/me`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await fetch(`${API}/auth/me`, { headers: { Authorization: `Bearer ${token}` } });
         if (res.ok) {
           const { user } = await res.json();
           set({ user, isAuthenticated: true, token });
@@ -160,15 +131,10 @@ export const useAuthStore = create((set) => ({
         }
       } catch {/* fall through */}
     }
-
-    // Fall back to localStorage session
     const session = loadSession();
-    if (session) {
-      set({ user: session, isAuthenticated: true, token: 'local' });
-    }
+    if (session) set({ user: session, isAuthenticated: true, token: 'local' });
   },
 
-  // ── LOGOUT ────────────────────────────────────────────────────────────────
   logout: () => {
     clearSession();
     localStorage.removeItem('accesscare_token');

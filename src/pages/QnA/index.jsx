@@ -1,10 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { animate } from 'animejs';
-import { ArrowLeft, PlayCircle, Square, Mic, Send, Bot, CheckCircle } from 'lucide-react';
+import { ArrowLeft, PlayCircle, Square } from 'lucide-react';
 import { useHaptics } from '../../hooks/useHaptics';
-import { useVoiceCommand } from '../../hooks/useVoiceCommand';
 
 const FAQS = [
   {
@@ -29,17 +27,6 @@ export default function QnA() {
   const { tap } = useHaptics();
   const [readingId, setReadingId] = useState(null);
   
-  // Custom Chatbot State
-  const [inputText, setInputText] = useState('');
-  const [chatHistory, setChatHistory] = useState([
-    { id: 'msg1', type: 'bot', text: 'Hello! I am your AccessCare Assistant. Ask me any question via text or voice.' }
-  ]);
-  const [isTyping, setIsTyping] = useState(false);
-
-  const { listening, transcript, startListening, stopListening } = useVoiceCommand({
-    onFinalResult: (text) => setInputText(prev => (prev ? prev + ' ' : '') + text),
-  });
-
   // Store refs to the text containers to animate them
   const textRefs = useRef({});
 
@@ -96,49 +83,11 @@ export default function QnA() {
     window.speechSynthesis.speak(ut);
   };
 
-  const readMessageAloud = (msgId, text) => {
-    window.speechSynthesis.cancel();
-    setReadingId(msgId);
-    const ut = new SpeechSynthesisUtterance(text);
-    ut.rate = 0.95;
-    ut.onend = () => setReadingId(null);
-    window.speechSynthesis.speak(ut);
-  };
-
-  const handleAsk = () => {
-    if (!inputText.trim()) return;
-    tap();
-    const userMsg = { id: Date.now().toString(), type: 'user', text: inputText };
-    setChatHistory(prev => [...prev, userMsg]);
-    setInputText('');
-    setIsTyping(true);
-
-    // Mock AI Response
-    setTimeout(() => {
-      setIsTyping(false);
-      const ansText = "Our facilities prioritize accessibility. I recommend checking the Facility Details page to view specific features like ramps, sign language availability, or sensory-friendly areas. You can also use the Companion Connect feature to request a verified volunteer for assistance.";
-      const botMsg = { id: (Date.now() + 1).toString(), type: 'bot', text: ansText };
-      setChatHistory(prev => [...prev, botMsg]);
-      readMessageAloud(botMsg.id, ansText);
-    }, 1500);
-  };
-
-  const handleVoiceToggle = () => {
-    tap();
-    if (listening) {
-      stopListening();
-    } else {
-      window.speechSynthesis.cancel();
-      startListening();
-    }
-  };
-
   return (
     <div style={{ padding: 'var(--sp-5) var(--sp-4)', paddingBottom: 100, minHeight: '100dvh', background: 'var(--clr-bg)' }}>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', marginBottom: 'var(--sp-6)', gap: 16 }}>
-        <motion.button
-          whileTap={{ scale: 0.9 }}
+        <button
           onClick={() => { tap(); navigate(-1); }}
           aria-label="Go back"
           style={{
@@ -149,7 +98,7 @@ export default function QnA() {
           }}
         >
           <ArrowLeft size={20} color="var(--clr-text-primary)" />
-        </motion.button>
+        </button>
         <div>
           <h1 style={{ fontSize: 'var(--fs-2xl)', fontWeight: 'var(--fw-extrabold)', color: 'var(--clr-text-primary)' }}>
             Help & Q&A
@@ -161,75 +110,6 @@ export default function QnA() {
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-4)' }}>
-        
-        {/* Chatbot Interface */}
-        <section style={{ background: 'var(--clr-surface)', borderRadius: 'var(--r-2xl)', padding: 'var(--sp-4)', border: '1px solid var(--clr-border)', boxShadow: 'var(--shadow-sm)', marginBottom: 'var(--sp-6)' }}>
-          <h2 style={{ fontSize: 'var(--fs-base)', fontWeight: 'var(--fw-bold)', marginBottom: 'var(--sp-4)', display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Bot size={20} color="var(--clr-primary)" /> AI Assistant
-          </h2>
-          
-          <div style={{ height: 300, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 16 }}>
-            {chatHistory.map(msg => (
-              <div key={msg.id} style={{ alignSelf: msg.type === 'user' ? 'flex-end' : 'flex-start', maxWidth: '85%' }}>
-                <div style={{
-                  padding: '12px 16px', borderRadius: 'var(--r-xl)',
-                  background: msg.type === 'user' ? 'var(--clr-primary)' : 'var(--clr-bg-card)',
-                  color: msg.type === 'user' ? '#fff' : 'var(--clr-text-primary)',
-                  boxShadow: 'var(--shadow-sm)', border: msg.type === 'user' ? 'none' : '1px solid var(--clr-border)',
-                  borderBottomRightRadius: msg.type === 'user' ? 4 : 'var(--r-xl)',
-                  borderBottomLeftRadius: msg.type === 'bot' ? 4 : 'var(--r-xl)',
-                  fontSize: 'var(--fs-sm)', lineHeight: 'var(--lh-relaxed)'
-                }}>
-                  {msg.text}
-                </div>
-                {msg.type === 'bot' && (
-                  <button onClick={() => { tap(); readMessageAloud(msg.id, msg.text); }} style={{ background: 'none', border: 'none', color: readingId === msg.id ? 'var(--clr-primary)' : 'var(--clr-text-muted)', fontSize: 11, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, marginTop: 4 }}>
-                    {readingId === msg.id ? <Square size={10} fill="currentColor"/> : <PlayCircle size={12}/>} {readingId === msg.id ? 'Stop' : 'Read aloud'}
-                  </button>
-                )}
-              </div>
-            ))}
-            {isTyping && (
-              <div style={{ alignSelf: 'flex-start', background: 'var(--clr-bg-card)', padding: '12px 16px', borderRadius: 'var(--r-xl)', border: '1px solid var(--clr-border)', display: 'flex', gap: 4 }}>
-                <motion.div animate={{ y: [0, -5, 0] }} transition={{ repeat: Infinity, duration: 0.6 }} style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--clr-text-muted)' }} />
-                <motion.div animate={{ y: [0, -5, 0] }} transition={{ repeat: Infinity, duration: 0.6, delay: 0.2 }} style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--clr-text-muted)' }} />
-                <motion.div animate={{ y: [0, -5, 0] }} transition={{ repeat: Infinity, duration: 0.6, delay: 0.4 }} style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--clr-text-muted)' }} />
-              </div>
-            )}
-          </div>
-
-          <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
-            <div style={{ flex: 1, position: 'relative' }}>
-              <input
-                value={inputText} onChange={e => setInputText(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && handleAsk()}
-                placeholder={listening ? "Listening..." : "Ask a question..."}
-                style={{
-                  width: '100%', padding: '14px 16px', paddingRight: 48,
-                  borderRadius: 'var(--r-full)', border: `2px solid ${listening ? 'var(--clr-alert-red)' : 'var(--clr-border)'}`,
-                  background: listening ? '#FEF2F2' : 'var(--clr-bg-card)', color: 'var(--clr-text-primary)',
-                  fontSize: 'var(--fs-base)', outline: 'none'
-                }}
-              />
-              <motion.button
-                whileTap={{ scale: 0.9 }} onClick={handleVoiceToggle}
-                style={{ position: 'absolute', right: 6, top: 6, width: 36, height: 36, borderRadius: '50%', background: listening ? 'var(--clr-alert-red)' : 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-              >
-                {listening ? <Square size={16} color="#fff" /> : <Mic size={20} color="var(--clr-text-secondary)" />}
-              </motion.button>
-            </div>
-            <motion.button
-              whileTap={{ scale: 0.9 }} onClick={handleAsk}
-              disabled={!inputText.trim() && !listening}
-              style={{ width: 48, height: 48, borderRadius: '50%', background: 'var(--clr-primary)', color: '#fff', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', opacity: (!inputText.trim() && !listening) ? 0.5 : 1 }}
-            >
-              <Send size={20} style={{ marginLeft: -2 }} />
-            </motion.button>
-          </div>
-        </section>
-
-        <h3 style={{ fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-bold)', color: 'var(--clr-text-muted)', paddingLeft: 8, textTransform: 'uppercase', letterSpacing: 1 }}>Common Questions</h3>
-        
         {FAQS.map(faq => {
           const isReading = readingId === faq.id;
           return (
@@ -243,8 +123,7 @@ export default function QnA() {
                 <h2 style={{ fontSize: 'var(--fs-base)', fontWeight: 'var(--fw-bold)', color: 'var(--clr-text-primary)', marginBottom: 8 }}>
                   {faq.q}
                 </h2>
-                <motion.button
-                  whileTap={{ scale: 0.9 }}
+                  <button
                   onClick={() => handleReadAloud(faq)}
                   aria-label={isReading ? "Stop reading" : "Read answer aloud with companion highlighting"}
                   style={{
@@ -256,7 +135,7 @@ export default function QnA() {
                   }}
                 >
                   {isReading ? <Square size={18} fill="currentColor" /> : <PlayCircle size={20} />}
-                </motion.button>
+                </button>
               </div>
               <p
                 ref={el => textRefs.current[faq.id] = el}

@@ -5,31 +5,22 @@ export const useUserStore = create((set) => ({
     name: 'Alex',
     avatar: null,
     needs: ['wheelchair', 'visual'],
-    points: 120, // Starting gamification points
-    emergencyLogs: [], // Simulates a backend log of SOS incidents
+    role: 'individual', // 'individual' | 'caregiver'
+    dependents: [
+      { id: 'd1', name: 'Mother (Sarah)', needs: ['wheelchair'] },
+      { id: 'd2', name: 'Grandpa Jim', needs: ['hearing', 'visual'] }
+    ],
+    activeDependentId: null,
   },
   setName: (name) => set(s => ({ profile: { ...s.profile, name } })),
+  setRole: (role) => set(s => ({ profile: { ...s.profile, role } })),
+  setActiveDependent: (id) => set(s => ({ profile: { ...s.profile, activeDependentId: id } })),
   toggleNeed: (need) => set(s => ({
     profile: {
       ...s.profile,
       needs: s.profile.needs.includes(need)
         ? s.profile.needs.filter(n => n !== need)
         : [...s.profile.needs, need],
-    },
-  })),
-  addEmergencySOS: (logData) => set((s) => ({
-    profile: {
-      ...s.profile,
-      emergencyLogs: [
-        { id: Date.now().toString(), timestamp: new Date().toISOString(), ...logData },
-        ...s.profile.emergencyLogs,
-      ],
-    },
-  })),
-  addPoints: (amount) => set((s) => ({
-    profile: {
-      ...s.profile,
-      points: s.profile.points + amount,
     },
   })),
 }));

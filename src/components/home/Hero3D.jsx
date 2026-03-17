@@ -1,7 +1,6 @@
 import { useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Float } from '@react-three/drei';
-import * as THREE from 'three';
 
 // Animated rotating green health plus / cross shape
 function HealthCross() {
@@ -14,7 +13,6 @@ function HealthCross() {
       groupRef.current.rotation.z = Math.sin(state.clock.elapsedTime * 0.4) * 0.08;
     }
     if (glowRef.current) {
-      // Pulse the glow sphere
       const s = 1 + Math.sin(state.clock.elapsedTime * 1.4) * 0.06;
       glowRef.current.scale.set(s, s, s);
     }

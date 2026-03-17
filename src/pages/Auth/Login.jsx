@@ -31,9 +31,9 @@ export default function Login() {
       await login(targetEmail, targetPassword);
       success();
       navigate('/');
-    } catch {
+    } catch (apiErr) {
       hapticError();
-      setErr('Invalid credentials. Try a demo email below.');
+      setErr(apiErr.message || 'Invalid credentials. Try a demo email below.');
     } finally {
       setLoading(false);
       setActiveRole(null);
@@ -47,7 +47,7 @@ export default function Login() {
   };
 
   return (
-    <div style={{ position: 'relative', zIndex: 1 }}>
+    <div style={{ position: 'relative', zIndex: 1, maxWidth: 400, margin: '0 auto', padding: '40px 20px' }}>
       {/* Header */}
       <div style={{ textAlign: 'center', marginBottom: 40 }}>
         <motion.div
@@ -101,7 +101,7 @@ export default function Login() {
                 <span style={{ fontSize: 20, filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.4))' }}>{r.emoji}</span>
                 <span style={{ fontWeight: 800, fontSize: 14, color: r.color, letterSpacing: '-0.01em' }}>{r.label}</span>
               </div>
-              <p style={{ fontSize: 11, color: '#94a3b8', fontFamily: 'monospace', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              <p style={{ fontSize: 11, color: '#94a3b8', fontFamily: 'monospace', whiteSpace: 'nowrap', overflow: 'hidden', textUnderlineOffset: 4 }}>
                 {r.email}
               </p>
             </motion.button>

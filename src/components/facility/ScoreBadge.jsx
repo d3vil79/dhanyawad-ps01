@@ -1,4 +1,4 @@
-import { useSpring, animated } from '@react-spring/web';
+import { useSpring, animated } from '@react-spring/web'; // eslint-disable-line no-unused-vars
 import { scoreColor, scoreLabel } from '../../utils/scoreCalculator';
 
 export function ScoreBadge({ score, large = false }) {

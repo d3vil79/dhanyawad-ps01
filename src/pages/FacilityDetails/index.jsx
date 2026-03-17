@@ -1,21 +1,29 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell } from 'recharts';
-import { useSpring, animated } from '@react-spring/web';
-import { ArrowLeft, Navigation, Phone, Clock, CheckCircle, Loader, Volume2, Camera } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion'; // eslint-disable-line no-unused-vars
+import { ArrowLeft, Navigation, Phone, Clock, CheckCircle, Loader, Volume2, ShieldCheck, Send, MessageSquare, Share2, Calendar } from 'lucide-react';
+import { useSpring, animated } from '@react-spring/web'; // eslint-disable-line no-unused-vars
 import { AlertBanner } from '../../components/facility/AlertBanner';
 import { ScoreBadge } from '../../components/facility/ScoreBadge';
+import { AccessibilityScorecard } from '../../components/facility/AccessibilityScorecard';
+import { ProofGallery } from '../../components/facility/ProofGallery';
+import { IndoorMap } from '../../components/facility/IndoorMap';
+import { LiveStatusCard } from '../../components/facility/LiveStatusCard';
+import { AccessibilityChat } from '../../components/facility/AccessibilityChat';
+import { LiveUpdateModal } from '../../components/facility/LiveUpdateModal';
+import AppointmentModal from '../../components/facility/AppointmentModal';
+import ShareA11ySheet from '../../components/caregiver/ShareA11ySheet';
 import { useHaptics } from '../../hooks/useHaptics';
 import { useAccessibilityStore } from '../../contexts/useAccessibilityStore';
 import { useUserStore } from '../../contexts/useUserStore';
 import { getFacilityById, pingPreArrival } from '../../services/api';
 import { formatDistance } from '../../utils/formatters';
+import { predictFacilityA11y } from '../../utils/predictiveEngine';
 
 export default function FacilityDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { tap, success, error: errVib } = useHaptics();
+  const { tap, success } = useHaptics();
   const { speak, stopSpeaking } = useAccessibilityStore();
   const { profile } = useUserStore();
 
@@ -23,6 +31,12 @@ export default function FacilityDetails() {
   const [imgIdx, setImgIdx] = useState(0);
   const [pingState, setPingState] = useState('idle');
   const [showPingConfirm, setShowPingConfirm] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [adminModalOpen, setAdminModalOpen] = useState(false);
+  const [isIndoorMapOpen, setIsIndoorMapOpen] = useState(false);
+  const [localAlert, setLocalAlert] = useState(null);
+  const [isShareSheetOpen, setIsShareSheetOpen] = useState(false);
+  const [isBookingOpen, setIsBookingOpen] = useState(false);
 
   useEffect(() => {
     getFacilityById(id).then(f => {
@@ -56,13 +70,10 @@ export default function FacilityDetails() {
     navigate('/map', { state: { routeTo: facility } });
   };
 
-  const chartData = facility ? [
-    { name: 'Motor', val: facility.categories.includes('wheelchair') ? facility.score * 10 : 40, color: '#3B82F6' },
-    { name: 'Visual', val: facility.categories.includes('visual') ? facility.score * 9.5 : 35, color: '#8B5CF6' },
-    { name: 'Cognitive', val: facility.categories.includes('cognitive') ? facility.score * 9 : 30, color: '#F59E0B' },
-    { name: 'Hearing', val: facility.categories.includes('hearing') ? facility.score * 9.2 : 45, color: '#10B981' },
-    { name: 'Sensory', val: facility.categories.includes('sensory') ? facility.score * 8.8 : 50, color: '#EC4899' },
-  ] : [];
+  const handleLiveUpdate = (alert) => {
+    setLocalAlert(alert);
+    speak(`New live update broadcasted: ${alert.message}`);
+  };
 
   const graphSpring = useSpring({
     from: { opacity: 0, y: 30 },
@@ -173,13 +184,41 @@ export default function FacilityDetails() {
         {/* Header */}
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} style={{ marginBottom: 'var(--sp-4)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
-            <h1 style={{
-              fontSize: 'var(--fs-2xl)', fontWeight: 'var(--fw-extrabold)',
-              color: 'var(--clr-text-primary)', lineHeight: 'var(--lh-tight)',
-              flex: 1, marginRight: 12,
-            }}>
-              {facility.name}
-            </h1>
+            <div style={{ flex: 1, marginRight: 12 }}>
+              <h1 style={{
+                fontSize: 'var(--fs-2xl)', fontWeight: 'var(--fw-extrabold)',
+                color: 'var(--clr-text-primary)', lineHeight: 'var(--lh-tight)',
+              }}>
+                {facility.name}
+              </h1>
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                onClick={() => { tap(); setAdminModalOpen(true); }}
+                style={{
+                  marginTop: 8, background: 'var(--clr-primary-light)', color: 'var(--clr-primary)',
+                  border: 'none', padding: '6px 12px', borderRadius: 'var(--r-md)',
+                  fontSize: 'var(--fs-xs)', fontWeight: 'var(--fw-bold)',
+                  cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6,
+                }}
+              >
+                <Send size={12} /> Broadcast Live Update
+              </motion.button>
+
+              {facility.floorPlan && (
+                <motion.button
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => { tap(); setIsIndoorMapOpen(true); speak('Opening indoor map.'); }}
+                  style={{
+                    marginTop: 8, background: 'var(--clr-secondary-light)', color: 'var(--clr-secondary)',
+                    border: 'none', padding: '6px 12px', borderRadius: 'var(--r-md)',
+                    fontSize: 'var(--fs-xs)', fontWeight: 'var(--fw-bold)',
+                    cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6,
+                  }}
+                >
+                  <Navigation size={12} /> View Indoor Map
+                </motion.button>
+              )}
+            </div>
             <ScoreBadge score={facility.score} large />
           </div>
 
@@ -211,35 +250,41 @@ export default function FacilityDetails() {
         </motion.div>
 
         {/* Alert */}
-        {facility.alert && (
+        {(localAlert || facility.alert) && (
           <div style={{ marginBottom: 'var(--sp-4)' }}>
-            <AlertBanner alert={facility.alert} />
+            <AlertBanner alert={localAlert || facility.alert} />
           </div>
         )}
 
-        {/* Analytics Graph */}
+        {/* Live Status Header */}
+        {facility.liveStatus && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ marginBottom: 'var(--sp-6)' }}>
+            <LiveStatusCard status={facility.liveStatus} />
+          </motion.div>
+        )}
+
+        {/* Scorecard & Proofs */}
         <animated.div style={{ ...graphSpring, marginBottom: 'var(--sp-6)' }}>
           <h2 style={{ fontSize: 'var(--fs-base)', fontWeight: 'var(--fw-bold)', color: 'var(--clr-text-primary)', marginBottom: 'var(--sp-4)' }}>
-            📊 Accessibility Breakdown
+            📊 Detailed Scorecard
           </h2>
-          <div style={{ height: 260, background: 'var(--clr-bg-card)', borderRadius: 'var(--r-xl)', padding: 'var(--sp-4)', border: '1px solid var(--clr-border)', boxShadow: 'var(--shadow-sm)' }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <XAxis dataKey="name" fontSize={11} tickLine={false} axisLine={false} dy={8} />
-                <YAxis fontSize={11} tickLine={false} axisLine={false} domain={[0, 100]} />
-                <Tooltip 
-                  cursor={{ fill: 'rgba(0,0,0,0.04)' }} 
-                  contentStyle={{ borderRadius: 'var(--r-md)', border: 'none', boxShadow: 'var(--shadow-lg)', fontSize: 13, fontWeight: 'var(--fw-bold)' }}
-                  formatter={(value) => [`${value.toFixed(1)}%`, 'Proficiency']}
-                />
-                <Bar dataKey="val" radius={[6, 6, 0, 0]}>
-                  {chartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+          {(() => {
+            const displayScorecard = facility.scorecard || predictFacilityA11y(facility).scorecard;
+            const predictionData = !facility.scorecard ? predictFacilityA11y(facility) : null;
+            
+            return (
+              <AccessibilityScorecard 
+                scores={displayScorecard} 
+                isPredicted={!!predictionData}
+                confidence={predictionData?.confidence}
+              />
+            );
+          })()}
+        </animated.div>
+        
+        {/* Proof Gallery */}
+        <animated.div style={{ ...graphSpring, marginBottom: 'var(--sp-6)', delay: 300 }}>
+          {facility.proofs && <ProofGallery initialProofs={facility.proofs} />}
         </animated.div>
 
         {/* Reviews */}
@@ -254,9 +299,19 @@ export default function FacilityDetails() {
                   background: 'var(--clr-bg-secondary)', borderRadius: 'var(--r-lg)',
                   padding: 'var(--sp-4)', border: '1px solid var(--clr-border)',
                 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                    <span style={{ fontWeight: 'var(--fw-semibold)', color: 'var(--clr-text-primary)' }}>{r.author}</span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span style={{ fontWeight: 'var(--fw-semibold)', color: 'var(--clr-text-primary)' }}>{r.author}</span>
+                      {r.verified && (
+                        <div style={{ display: 'flex', alignItems: 'center', color: '#059669', title: 'Verified Identity' }}>
+                          <ShieldCheck size={14} />
+                        </div>
+                      )}
+                    </div>
                     <span style={{ fontWeight: 'var(--fw-bold)', color: 'var(--clr-primary)', fontSize: 'var(--fs-sm)' }}>{r.rating}/10</span>
+                  </div>
+                  <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--clr-text-muted)', marginBottom: 8, fontStyle: 'italic' }}>
+                    Verified {r.role}
                   </div>
                   <p style={{ fontSize: 'var(--fs-sm)', color: 'var(--clr-text-secondary)', lineHeight: 'var(--lh-relaxed)', marginBottom: 8 }}>
                     {r.text}
@@ -271,18 +326,8 @@ export default function FacilityDetails() {
                       }}>{t}</span>
                     ))}
                   </div>
-                  
-                  {r.proofImage && (
-                    <div style={{ marginTop: 12, borderRadius: 'var(--r-md)', overflow: 'hidden', border: '1px solid var(--clr-border)', position: 'relative' }}>
-                      <img src={r.proofImage} alt="User uploaded accessibility proof" style={{ width: '100%', height: 120, objectFit: 'cover', display: 'block' }} />
-                      <div style={{ position: 'absolute', bottom: 8, right: 8, background: 'rgba(0,0,0,0.6)', color: '#fff', fontSize: '10px', padding: '2px 6px', borderRadius: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
-                        <Camera size={10} /> Verified Proof
-                      </div>
-                    </div>
-                  )}
-
                   <button
-                    onClick={() => { tap(); speak(`Review by ${r.author}. Score ${r.rating}. ${r.text}`, { force: true }); }}
+                    onClick={() => { tap(); speak(`Review by ${r.author}, verified ${r.role}. Score ${r.rating}. ${r.text}`, { force: true }); }}
                     aria-label={`Read review by ${r.author} aloud`}
                     style={{
                       marginTop: 8, background: 'none', border: 'none', cursor: 'pointer',
@@ -306,69 +351,141 @@ export default function FacilityDetails() {
         borderTop: '1px solid var(--clr-border)',
         display: 'flex', gap: 12, zIndex: 50,
       }}>
-        {/* Navigate */}
-        <motion.button
-          aria-label={`Get directions to ${facility.name}`}
-          onClick={handleNavigate}
-          whileTap={{ scale: 0.96 }}
-          style={{
-            flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-            padding: '14px', borderRadius: 'var(--r-lg)',
-            border: '2px solid var(--clr-primary)', color: 'var(--clr-primary)',
-            fontWeight: 'var(--fw-semibold)', fontSize: 'var(--fs-sm)',
-            background: 'transparent', cursor: 'pointer',
-          }}
-        >
-          <Navigation size={16} aria-hidden="true" /> Navigate
-        </motion.button>
+        {profile.role === 'caregiver' ? (
+          <>
+            {/* Share Summary */}
+            <motion.button
+              onClick={() => { tap(); setIsShareSheetOpen(true); }}
+              whileTap={{ scale: 0.96 }}
+              style={{
+                flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                padding: '14px', borderRadius: 'var(--r-lg)',
+                border: '2px solid var(--clr-secondary)', color: 'var(--clr-secondary)',
+                fontWeight: 'var(--fw-semibold)', fontSize: 'var(--fs-sm)',
+                background: 'transparent', cursor: 'pointer',
+              }}
+            >
+              <Share2 size={16} /> Share Specs
+            </motion.button>
 
-        {/* Ping Pre-Arrival */}
-        <motion.button
-          onClick={pingState === 'idle' ? handlePing : undefined}
-          whileTap={{ scale: 0.96 }}
-          disabled={pingState !== 'idle'}
-          aria-label="Ping facility for pre-arrival accessibility assistance"
-          aria-busy={pingState === 'loading'}
-          style={{
-            flex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-            padding: '14px', borderRadius: 'var(--r-lg)', border: 'none',
-            background: pingState === 'done' ? 'var(--clr-secondary)' : pingState === 'loading' ? 'var(--clr-primary-dark)' : 'var(--clr-primary)',
-            color: '#fff', fontWeight: 'var(--fw-semibold)', fontSize: 'var(--fs-sm)',
-            cursor: pingState === 'idle' ? 'pointer' : 'default',
-            transition: 'background var(--transition-base)',
-          }}
-        >
-          {pingState === 'loading'
-            ? <><Loader size={16} style={{ animation: 'spin 1s linear infinite' }} aria-hidden="true" /> Notifying…</>
-            : pingState === 'done'
-            ? <><CheckCircle size={16} aria-hidden="true" /> Facility Pinged!</>
-            : <>📡 Ping Pre-Arrival</>
-          }
-        </motion.button>
+            {/* Coordinate Visit */}
+            <motion.button
+              onClick={pingState === 'idle' ? handlePing : undefined}
+              whileTap={{ scale: 0.96 }}
+              disabled={pingState !== 'idle'}
+              style={{
+                flex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                padding: '14px', borderRadius: 'var(--r-lg)', border: 'none',
+                background: pingState === 'done' ? 'var(--clr-secondary)' : 'var(--clr-primary)',
+                color: '#fff', fontWeight: 'var(--fw-bold)', fontSize: 'var(--fs-sm)',
+                cursor: 'pointer', boxShadow: 'var(--shadow-md)'
+              }}
+            >
+              {pingState === 'loading' ? <Loader size={16} className="spin" /> : <ShieldCheck size={16} />}
+              {pingState === 'done' ? 'Visit Coordinated' : 'Coordinate Visit'}
+            </motion.button>
+          </>
+        ) : (
+          <>
+            {/* Standard Individual Buttons */}
+            <motion.button
+              aria-label={`Get directions to ${facility.name}`}
+              onClick={handleNavigate}
+              whileTap={{ scale: 0.96 }}
+              style={{
+                flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                padding: '14px', borderRadius: 'var(--r-lg)',
+                border: '2px solid var(--clr-primary)', color: 'var(--clr-primary)',
+                fontWeight: 'var(--fw-semibold)', fontSize: 'var(--fs-sm)',
+                background: 'transparent', cursor: 'pointer',
+              }}
+            >
+              <Navigation size={16} aria-hidden="true" /> Navigate
+            </motion.button>
+
+            <motion.button
+              onClick={() => { tap(); setIsChatOpen(true); speak('Opening chat with accessibility coordinator.'); }}
+              whileTap={{ scale: 0.96 }}
+              aria-label="Chat with facility accessibility staff"
+              style={{
+                width: 44, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                borderRadius: 'var(--r-lg)', border: '1.5px solid var(--clr-border)',
+                background: 'var(--clr-surface)', cursor: 'pointer',
+              }}
+            >
+              <MessageSquare size={18} color="var(--clr-text-primary)" />
+            </motion.button>
+
+            <motion.button
+              aria-label={`Book an appointment at ${facility.name}`}
+              onClick={() => { tap(); setIsBookingOpen(true); }}
+              whileTap={{ scale: 0.96 }}
+              style={{
+                borderRadius: 'var(--r-lg)', border: '1.5px solid var(--clr-primary)',
+                padding: '12px 16px',
+                background: 'var(--clr-primary-light)', color: 'var(--clr-primary)',
+                fontWeight: 'var(--fw-bold)', fontSize: 'var(--fs-sm)',
+                cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6,
+              }}
+            >
+              <Calendar size={16} /> Book
+            </motion.button>
+
+            <motion.button
+              onClick={pingState === 'idle' ? handlePing : undefined}
+              whileTap={{ scale: 0.96 }}
+              disabled={pingState !== 'idle'}
+              aria-label="Ping facility for pre-arrival accessibility assistance"
+              style={{
+                flex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                padding: '14px', borderRadius: 'var(--r-lg)', border: 'none',
+                background: pingState === 'done' ? 'var(--clr-secondary)' : pingState === 'loading' ? 'var(--clr-primary-dark)' : 'var(--clr-primary)',
+                color: '#fff', fontWeight: 'var(--fw-semibold)', fontSize: 'var(--fs-sm)',
+                cursor: pingState === 'idle' ? 'pointer' : 'default',
+              }}
+            >
+              {pingState === 'loading'
+                ? <><Loader size={16} className="spin" /> Notifying…</>
+                : pingState === 'done'
+                ? <><CheckCircle size={16} /> Pinged!</>
+                : <>📡 Ping Pre-Arrival</>
+              }
+            </motion.button>
+          </>
+        )}
       </div>
 
-      {/* Ping Toast */}
       <AnimatePresence>
-        {showPingConfirm && (
-          <motion.div
-            role="status" aria-live="polite"
-            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }}
-            style={{
-              position: 'fixed', bottom: 168, left: 16, right: 16,
-              background: 'var(--clr-secondary-light)',
-              border: '1.5px solid var(--clr-secondary)',
-              borderRadius: 'var(--r-lg)', padding: '12px 16px', zIndex: 200,
-            }}
-          >
-            <p style={{ fontWeight: 'var(--fw-bold)', color: 'var(--clr-secondary)' }}>✅ Facility Notified!</p>
-            <p style={{ fontSize: 'var(--fs-sm)', color: 'var(--clr-text-secondary)' }}>
-              Accessibility staff will be ready for your arrival in ~15–20 minutes.
-            </p>
-          </motion.div>
+        {isShareSheetOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => setIsShareSheetOpen(false)}
+              style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 2999, backdropFilter: 'blur(4px)' }}
+            />
+            <ShareA11ySheet facility={facility} onClose={() => setIsShareSheetOpen(false)} />
+          </>
         )}
       </AnimatePresence>
 
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      <LiveUpdateModal isOpen={adminModalOpen} onClose={() => setAdminModalOpen(false)} onSubmit={handleLiveUpdate} />
+      <IndoorMap isOpen={isIndoorMapOpen} onClose={() => setIsIndoorMapOpen(false)} facility={facility} />
+      <AccessibilityChat isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} facility={facility} />
+      
+      <AnimatePresence>
+        {isBookingOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => setIsBookingOpen(false)}
+              style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 3000, backdropFilter: 'blur(4px)' }}
+            />
+            <AppointmentModal facility={facility} onClose={() => setIsBookingOpen(false)} />
+          </>
+        )}
+      </AnimatePresence>
+
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } } .spin { animation: spin 1s linear infinite; }`}</style>
     </div>
   );
 }

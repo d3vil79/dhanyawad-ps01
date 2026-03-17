@@ -1,11 +1,15 @@
-import { motion } from 'framer-motion';
+import { motion } from 'framer-motion'; // eslint-disable-line no-unused-vars
 import { useNavigate } from 'react-router-dom';
 import { ScoreBadge } from './ScoreBadge';
+import { SmartMatchBadge } from './SmartMatchBadge';
 import { formatDistance } from '../../utils/formatters';
 import { MapPin, Clock } from 'lucide-react';
+import { useUserStore } from '../../contexts/useUserStore';
 
 export function FacilityCard({ facility, index = 0 }) {
   const navigate = useNavigate();
+  const { profile } = useUserStore();
+  const userNeeds = profile?.needs ?? [];
 
   return (
     <motion.article
@@ -83,6 +87,13 @@ export function FacilityCard({ facility, index = 0 }) {
             {facility.hours}
           </span>
         </div>
+
+        {/* Smart Match Badge */}
+        {userNeeds.length > 0 && (
+          <div style={{ marginBottom: 8 }}>
+            <SmartMatchBadge facility={facility} userNeeds={userNeeds} />
+          </div>
+        )}
 
         {/* Category tags */}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>

@@ -208,7 +208,7 @@ export async function getFacilityById(id) {
         reviews: []
       };
     }
-  } catch(e) { /* ignore */ }
+  } catch { /* ignore */ }
   
   return null;
 }

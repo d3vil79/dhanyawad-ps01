@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion } from 'framer-motion'; // eslint-disable-line no-unused-vars
 import Velocity from 'velocity-animate';
 import { ArrowLeft, FileText, Pill, AlertTriangle, Clock, Download } from 'lucide-react';
 import { useHaptics } from '../../hooks/useHaptics';

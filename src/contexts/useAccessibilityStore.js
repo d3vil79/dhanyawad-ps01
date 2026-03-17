@@ -8,6 +8,19 @@ export const useAccessibilityStore = create((set, get) => ({
 
   readingRuler: false,
   largeTapTargets: false,
+  simpleMode: false,
+
+  toggleSimpleMode: () => {
+    const next = !get().simpleMode;
+    set({ simpleMode: next });
+    document.body.classList.toggle('simple-mode', next);
+    if ('speechSynthesis' in window && get().ttsEnabled) {
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(
+        new SpeechSynthesisUtterance(next ? 'Simple mode enabled. Layout simplified.' : 'Simple mode disabled.')
+      );
+    }
+  },
 
   toggleReadingRuler: () => {
     const next = !get().readingRuler;

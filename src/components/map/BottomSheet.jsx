@@ -10,8 +10,9 @@ export function BottomSheet({ facility, onClose, userCoords, onRouteCalculated }
   const navigate = useNavigate();
   const { tap } = useHaptics();
   const [routing, setRouting] = useState(false);
+  const [showingRouteOptions, setShowingRouteOptions] = useState(false);
 
-  const handleNavigate = async () => {
+  const handleCalculateRoute = async (type) => {
     if (!userCoords || !facility) return;
     tap();
     setRouting(true);
@@ -26,7 +27,7 @@ export function BottomSheet({ facility, onClose, userCoords, onRouteCalculated }
       const data = await res.json();
       
       if (data.code === 'Ok' && data.routes.length > 0) {
-        onRouteCalculated(data.routes[0].geometry, facility);
+        onRouteCalculated(data.routes[0].geometry, facility, type);
         onClose(); // Hide sheet so user can see the route
       }
     } catch (e) {
@@ -118,7 +119,7 @@ export function BottomSheet({ facility, onClose, userCoords, onRouteCalculated }
 
             <div style={{ display: 'flex', gap: 'var(--sp-2)', marginTop: 'var(--sp-4)' }}>
               <button
-                onClick={handleNavigate}
+                onClick={() => { tap(); setShowingRouteOptions(true); }}
                 disabled={routing || !userCoords}
                 style={{
                   flex: 1,
@@ -155,6 +156,69 @@ export function BottomSheet({ facility, onClose, userCoords, onRouteCalculated }
                 Full Details →
               </button>
             </div>
+
+            {/* Route Options Overlay */}
+            <AnimatePresence>
+              {showingRouteOptions && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 20 }}
+                  style={{
+                    position: 'absolute', inset: 0, background: 'var(--clr-bg-card)', zIndex: 110,
+                    borderRadius: 'var(--r-xl) var(--r-xl) 0 0', padding: 'var(--sp-6)',
+                    display: 'flex', flexDirection: 'column'
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                    <h3 style={{ fontSize: 'var(--fs-base)', fontWeight: 'var(--fw-bold)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <Navigation size={18} color="var(--clr-primary)" /> Choose Route
+                    </h3>
+                    <button onClick={() => { tap(); setShowingRouteOptions(false); }} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
+                      <X size={20} color="var(--clr-text-muted)" />
+                    </button>
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    <motion.button
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => handleCalculateRoute('accessible')}
+                      disabled={routing}
+                      style={{
+                        background: 'linear-gradient(135deg,#EFF6FF,#F0FDF4)', border: '1.5px solid var(--clr-primary)',
+                        padding: 16, borderRadius: 'var(--r-lg)', textAlign: 'left', cursor: 'pointer',
+                        display: 'flex', alignItems: 'flex-start', gap: 12, position: 'relative', overflow: 'hidden'
+                      }}
+                    >
+                      <div style={{ fontSize: 24 }}>♿</div>
+                      <div>
+                        <p style={{ fontWeight: 'var(--fw-bold)', color: 'var(--clr-primary)', fontSize: 'var(--fs-sm)', marginBottom: 2 }}>Barrier-Free Route</p>
+                        <p style={{ fontSize: 'var(--fs-xs)', color: 'var(--clr-text-secondary)', lineHeight: 1.3 }}>Prioritises ramps, smooth paths, and elevators. Avoids stairs.</p>
+                      </div>
+                      {routing && <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ color: 'var(--clr-primary)', fontWeight: 'var(--fw-bold)', fontSize: 'var(--fs-xs)' }}>Calculating...</span></div>}
+                    </motion.button>
+
+                    <motion.button
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => handleCalculateRoute('standard')}
+                      disabled={routing}
+                      style={{
+                        background: 'var(--clr-surface)', border: '1px solid var(--clr-border)',
+                        padding: 16, borderRadius: 'var(--r-lg)', textAlign: 'left', cursor: 'pointer',
+                        display: 'flex', alignItems: 'flex-start', gap: 12, position: 'relative', overflow: 'hidden'
+                      }}
+                    >
+                      <div style={{ fontSize: 24, paddingLeft: 4, width: 28, overflow: 'hidden' }}>🚶</div>
+                      <div>
+                        <p style={{ fontWeight: 'var(--fw-bold)', color: 'var(--clr-text-primary)', fontSize: 'var(--fs-sm)', marginBottom: 2 }}>Standard Route</p>
+                        <p style={{ fontSize: 'var(--fs-xs)', color: 'var(--clr-text-secondary)', lineHeight: 1.3 }}>Fastest path. May include stairs or steep inclines.</p>
+                      </div>
+                      {routing && <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ color: 'var(--clr-text-primary)', fontWeight: 'var(--fw-bold)', fontSize: 'var(--fs-xs)' }}>Calculating...</span></div>}
+                    </motion.button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.div>
         </>
       )}

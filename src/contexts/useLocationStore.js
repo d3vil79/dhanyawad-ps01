@@ -2,7 +2,7 @@ import { create } from 'zustand';
 
 const DEFAULT_COORDS = { lat: 28.6139, lng: 77.2090 }; // New Delhi fallback
 
-export const useLocationStore = create((set, get) => ({
+export const useLocationStore = create((set) => ({
   coords: DEFAULT_COORDS,
   loading: false,
   error: null,
